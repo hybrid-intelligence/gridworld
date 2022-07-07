@@ -1,0 +1,1 @@
+# NeurIPS 2022 IGLU Challenge - Starter Kit

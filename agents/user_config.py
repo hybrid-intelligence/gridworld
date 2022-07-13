@@ -1,4 +1,4 @@
-from vector_agent import DummyVectorAgent
+from agents.vector_agent import DummyVectorAgent
 
 ###################################################################
 #####        Specify your agent and other configs here        #####

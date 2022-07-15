@@ -1,12 +1,12 @@
 ![IGLU Banner](https://user-images.githubusercontent.com/660004/179000978-29cf4462-4d2b-4623-8418-157449322fda.png)
 
 # **[NeurIPS 2022 - IGLU Challenge](https://www.aicrowd.com/challenges/neurips-2022-iglu-challenge)** - Starter Kit
-
+[![Discord](https://img.shields.io/discord/565639094860775436.svg)](https://discord.gg/fNRrSvZkry)
 
 This repository is the IGLU Challenge **Starter kit**! It contains:
-* **Instructions** for setting up your codebase to make submissions easy.
-* **Baselines** for quickly getting started training your agent.
-* **Documentation** for how to submit your model to the leaderboard.
+*  **Documentation** on how to submit your models to the leaderboard
+*  **The procedure** for best practices and information on how we evaluate your agent, etc.
+*  **Starter code** for you to get started!
 
 Quick Links:
 
@@ -192,25 +192,26 @@ GitLab.
 
 ## FAQs
 
-### How does submission work?
+TODO
 
-The submission entrypoint is a bash script `run.sh`, that runs in an environment defined by `Dockerfile`. When this script is 
-called, aicrowd will expect you to generate all your rollouts in the 
-allotted time, using `aicrowd_gym` in place of regular `gym`.  This means 
-that AIcrowd can make sure everyone is running the same environment, 
-and can keep score!
+## How to write your own agent?
 
-### What languages can I use?
 
-Since the entrypoint is a bash script `run.sh`, you can call any arbitrary
-code from this script.  However, to get you started, the environment is 
-set up to generate rollouts in Python. 
+We recommend that you place the code for all your agents in the `agents` directory (though it is not mandatory). You should implement the
 
-The repo gives you a template placeholder to load your model 
-(`agents/your_agent.py`), and a config to choose which agent to load 
-(`submission_config.py`). You can then test a submission, adding all of 
-AIcrowd’s timeouts on the environment, with `python test_submission.py`
+- `register_reset`
+- `compute_action`
 
+**Add your agent name in** `vector_agent.py`
+  
+See the example in `agents/random_agent.py`
+
+### Parallel Environments
+Since IGLU-Gridworld is super fast, you may want to run multiple envs in parallel and process a batch of observations at once. To set the number of parallel envs add it to `user_config.py`
+
+We provide a dummy vector agent that just loops over all the observations. You can change this class to process batch observations if you want.
+
+**(Optional) Add your custom vector agent in** `user_config.py`, this is what the evaluator will use.
 ### How do I specify my dependencies?
 
 We accept submissions with custom runtimes, so you can choose your 
@@ -224,21 +225,21 @@ You can check detailed information about the same in the [RUNTIME.md](/docs/RUNT
 Please follow the example structure as it is in the starter kit for the code structure.
 The different files and directories have following meaning:
 
-TODO
 
 ```
 .
-├── aicrowd.json                  # Submission meta information - add tags for tracks here
-├── apt.txt                       # Packages to be installed inside submission environment
-├── requirements.txt              # Python packages to be installed with pip
-├── rollout.py                    # This will run rollouts on a batched agent
-├── test_submission.py            # Run this on your machine to get an estimated score
-├── run.sh                        # Submission entrypoint
-├── utilities                     # Helper scripts for setting up and submission 
-│   └── submit.sh                 # script for easy submission of your code
-├
-
+├── aicrowd.json           # Set your username, IMPORTANT: set gpu to true if you need it
+├── apt.txt                # Linux packages to be installed inside docker image
+├── requirements.txt       # Python packages to be installed
+├── local_evaluation.py    # Use this to check your agent evaluation flow locally
+├── evaluator/             # Contains helper functions for local evaluation
+└── agents                 # Place your agents related code here
+    ├── random_agent.py            # Random agent
+    ├── vector_agent.py            # IMPORTANT: Add your agent name here
+    ├── user_config.py              # IMPORTANT: Add your vector agent name here
+    └── aicrowd_wrapper.py          # helps the evaluation, best not to edit
 ```
+
 
 Finally, **you must specify an AIcrowd submission JSON in `aicrowd.json` to be scored!** See [How do I actually make a submission?](#how-do-i-actually-make-a-submission) below for more details.
 
@@ -247,19 +248,13 @@ Finally, **you must specify an AIcrowd submission JSON in `aicrowd.json` to be s
 
 The best current baseline is ... TODO
 
-To then submit your saved model, simply set the `AGENT` in 
-`submission config` to be `TODO`, and modify the 
-`agent/TODO_agent.py` to point to your saved directory.
-
-You can now test your saved model with `python test_submission.py`
-
 ### How can I get going with a completely new model?
 
 Train your model as you like, and when you’re ready to submit, just adapt
 `YourAgent` in `agents/your_agent.py` to load your model and take a `batched_step`.
 
-Then just set your `AGENT` in `submission_config.py` to be this class 
-and you are ready to test with `python test_submission.py`
+Then just set your `AGENT` in `agents/vector_agent.py` to be this class 
+and you are ready to test with `python local_evaluation.py`
 
 ### How do I actually make a submission?
 
@@ -320,7 +315,7 @@ The machine where the submission will run will have following specifications:
     pip install -r requirements.txt
     ```
 
-5. **Run rollouts** with a random agent with `python test_submission.py`.
+5. **Run rollouts** with a random agent with `python local_evaluation.py`.
 
 
 ## Setting Up Details [Docker]
@@ -364,7 +359,7 @@ Although we are looking to supply this repository with baselines... TODO
 
 The best way to test your model is to run your submission locally.
 
-You can do this naively by simply running  `python rollout.py` or you can simulate the extra timeout wrappers that AIcrowd will implement by using `python test_submission.py`. 
+You can do this naively by simply running  `python local_evaluation.py`. 
 
 # How to Submit
 

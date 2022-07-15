@@ -146,3 +146,6 @@ cython_debug/
 
 *.tar.gz
 *.serialized
+
+evaluator/metrics.json
+evaluator/videos/*

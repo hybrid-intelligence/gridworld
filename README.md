@@ -460,7 +460,7 @@ You can do this naively by simply running  `python local_evaluation.py`.
 
 # How to Submit
 
-More information on submissions can be found at our [SUBMISSION.md](/docs/SUBMISSION.md).
+More information on submissions can be found at our [SUBMISSION.md](/docs/submission.md).
 
 ## Contributors
 

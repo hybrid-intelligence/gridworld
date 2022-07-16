@@ -289,7 +289,10 @@ GitLab.
 
 ## FAQs
 
-TODO
+* How do I submit a model?
+  * More information on submissions can be found at our [SUBMISSION.md](/docs/submission.md). In short, you should push you code to the AIcrowd's gitlab with a specific git tag and the evaluation will be triggered automatically.
+
+
 
 ## How to write your own agent?
 

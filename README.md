@@ -371,7 +371,7 @@ The submission is made by adding everything including the model to git,
 tagging the submission with a git tag that starts with `submission-`, and 
 pushing to AIcrowd's GitLab. The rest is done for you!
 
-More details are available [here](/docs/SUBMISSION.md).
+More details are available [here](/docs/submission.md).
 
 ### Are there any hardware or time constraints?
 

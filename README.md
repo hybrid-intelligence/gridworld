@@ -14,26 +14,6 @@ Quick Links:
 * [The IGLU Challenge - Slack Workspace](https://join.slack.com/t/igluorg/shared_invite/zt-zzlc1qpy-X6JBgRtwx1w_CBqOV5~jaA&sa=D&sntz=1&usg=AOvVaw33cSaYXeinlMWYC6bGIe33)
 * [The IGLU Challenge - Starter Kit](https://gitlab.aicrowd.com/aicrowd/challenges/iglu-challenge-2022)
 
-## Quick Start
-
-TODO
-
-With Docker and x1 GPU
-```bash
-# 1. CLONE THE REPO AND DOWNLOAD BASELINE MODELS
-git clone http://gitlab.aicrowd.com/iglu/neurips-2022-the-iglu-challenge.git \
-    && cd neurips-2022-the-iglu-challenge
-
-# 2. START THE DOCKER IMAGE
-...
-
-# 3. TEST AN EXISTING SUBMISSION 
-python test_submission.py      # Tests ./saved_models/TODO
-
-# 3. TRAIN YOUR OWN
-...
-```
-
 
 # Table of Contents
 1. [Intro to IGLU Gridworld and the IGLU Challenge](#intro-to-iglu-gridworld-and-the-iglu-challenge)
@@ -297,21 +277,16 @@ GitLab.
 ## How to write your own agent?
 
 
-We recommend that you place the code for all your agents in the `agents` directory (though it is not mandatory). You should implement the
 
-- `register_reset`
-- `compute_action`
+We recommend that you place the code for all your agents in the `agents` directory (though it is not mandatory). You should implement the `act` function.
 
-**Add your agent name in** `vector_agent.py`
+**Add your agent name in** `user_config.py`
   
 See the example in `agents/random_agent.py`
 
 ### Parallel Environments
-Since IGLU-Gridworld is super fast, you may want to run multiple envs in parallel and process a batch of observations at once. To set the number of parallel envs add it to `user_config.py`
+Since IGLU-Gridworld is super fast, you may want to run multiple envs in parallel and process a batch of observations at once. Detailed explanation for using parallel environments is provided in `agents/README.md`
 
-We provide a dummy vector agent that just loops over all the observations. You can change this class to process batch observations if you want.
-
-**(Optional) Add your custom vector agent in** `user_config.py`, this is what the evaluator will use.
 ### How do I specify my dependencies?
 
 We accept submissions with custom runtimes, so you can choose your 
@@ -336,7 +311,8 @@ The different files and directories have following meaning:
 └── agents                 # Place your agents related code here
     ├── random_agent.py            # Random agent
     ├── vector_agent.py            # IMPORTANT: Add your agent name here
-    ├── user_config.py              # IMPORTANT: Add your vector agent name here
+    ├── user_config.py              # IMPORTANT: Add your agent name here
+    ├── user_config_vector_agent.py # Use this if you want to use a batch of observations
     └── aicrowd_wrapper.py          # helps the evaluation, best not to edit
 ```
 

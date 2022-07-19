@@ -1,4 +1,4 @@
-from agents.random_agent import RandomBuilderAgent
+from agents.user_config import UserConfig
 
 class DummyVectorAgent:
     """ 
@@ -11,7 +11,8 @@ class DummyVectorAgent:
         self.num_parallel_envs = num_parallel_envs # Don't change this here, see user_config.py
         self.action_space = None # Don't change this, will be set by aicrowd wrapper
 
-        self.agents = [RandomBuilderAgent() for _ in range(self.num_parallel_envs)]
+        Agent_cls = UserConfig.SingleAgent
+        self.agents = [Agent_cls() for _ in range(self.num_parallel_envs)]
     
     def set_action_space(self, action_space):
         """ AIcrowd wrapper will call this with the appropriate action space """

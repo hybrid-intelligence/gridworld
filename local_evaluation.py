@@ -5,13 +5,13 @@ import numpy as np
 import gridworld
 from gridworld.tasks import Tasks
 from evaluator.iglu_evaluator import TaskEpisodeTracker
-from dataclasses import dataclass
 
 from evaluator.utils import convert_keys_to_string, read_json_file
 
 
-def create_single_env(render):
+def create_single_env(render, action_space_name='walking'):
     return gym.make('IGLUGridworld-v0' if render else 'IGLUGridworldVector-v0',
+                    action_space=action_space_name,
                     size_reward=False, max_steps=500, vector_state=True)
 
 class TaskGenerator:
@@ -20,6 +20,7 @@ class TaskGenerator:
     """
     def __init__(self, limit_tasks):
         from gridworld.data import IGLUDataset
+        print("Loading tasks")
         self.dataset = IGLUDataset(dataset_version="v0.1.0-rc1",
                                    task_kwargs=None,
                                    force_download=False)
@@ -66,6 +67,7 @@ def evaluate(LocalEvalConfig):
     # Change at your own risk
     agent = AIcrowdAgent()
     num_parallel_envs = agent.num_parallel_envs
+    action_space_name = agent.action_space_name
 
     task_generator = TaskGenerator(LocalEvalConfig.LIMIT_TASKS)
 
@@ -80,7 +82,8 @@ def evaluate(LocalEvalConfig):
     observations = []
     num_steps = 0
     for i in range(num_parallel_envs):
-        env = create_single_env(render=LocalEvalConfig.RENDER)
+        env = create_single_env(render=LocalEvalConfig.RENDER, 
+                                action_space_name=action_space_name)
         env.set_task(task)
         observations.append(env.reset())
         envs.append(env)
@@ -170,18 +173,15 @@ def evaluate(LocalEvalConfig):
         metrics_size_averaged[metric] = np.sum([avgm[metric] * sizes[k] for k, avgm in task_summaries.items()]) \
                                         / sum(sizes.values())
 
-    print("==================== Config ==============================")
-    print(LocalEvalConfig)
     print("===================== Final scores =======================")
     print(metrics_size_averaged)
 
 if __name__ == "__main__":
     # change the local config as needed
-    @dataclass
     class LocalEvalConfig:
         MAX_EPISODES_PER_TASK = 5
         REWARDS_FILE = './evaluator/metrics.json'
         LIMIT_TASKS = 5 # set this to none for all public tasks
         RENDER = True
-
+    
     evaluate(LocalEvalConfig)

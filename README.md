@@ -26,8 +26,6 @@ Quick Links:
 
 Your goal of this challenge is to **build interactive agents** that learn to solve a task while provided with **grounded natural language instructions** in a **collaborative environment**.
 
-TODO
-
 #### A high level description of the Challenge Procedure:
 1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/neurips-2022-iglu-challenge).
 2. **Clone** this repo and start developing your solution.
@@ -277,12 +275,11 @@ GitLab.
 ## How to write your own agent?
 
 
-
 We recommend that you place the code for all your agents in the `agents` directory (though it is not mandatory). You should implement the `act` function.
 
 **Add your agent name in** `user_config.py`
   
-See the example in `agents/random_agent.py`
+See the example in `agents/random_agent.py` and `agents/color_correct_random_agent.py`
 
 ### Parallel Environments
 Since IGLU-Gridworld is super fast, you may want to run multiple envs in parallel and process a batch of observations at once. Detailed explanation for using parallel environments is provided in `agents/README.md`
@@ -322,7 +319,13 @@ Finally, **you must specify an AIcrowd submission JSON in `aicrowd.json` to be s
 
 ### How can I get going with an existing baseline?
 
-The best current baseline is ... TODO
+A simple heuristic baseline is added into `agents/color_correct_random_agent.py`, you can refer to it as an
+example of using the observation space.
+
+A much more advanced baseline is available [here](https://github.com/iglu-contest/iglu-2022-rl-baseline). 
+It consists of three parts: 1. task generator (NLP part): it predicts target blocks to add or remove in response to an instruction.
+2. subtask generator (heuristic part): a piece of heuristic python code that suggest an order in which blocks should be added or removed (including supporting ones). 3. subtask solving module (RL part): a trained policy that exetutes one-block-placement tasks along the order provided by heuristic subtask generator. **During the warmup round**, the baseline is available as an open-source repository, without integration for the submission system. The integration will be provided when competition starts. 
+
 
 ### How can I get going with a completely new model?
 

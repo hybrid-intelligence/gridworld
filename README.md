@@ -342,7 +342,7 @@ The `aicrowd.json` of each submission should contain the following content:
 
 ```json
 {
-  "challenge_id": "neurips-2022-the-iglu-challenge",
+  "challenge_id": "neurips-2022-the-iglu-challenge-rl-task",
   "authors": ["your-aicrowd-username"],
   "description": "(optional) description about your awesome agent",
   "gpu": true

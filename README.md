@@ -357,9 +357,10 @@ More details are available [here](/docs/submission.md).
 
 ### Are there any hardware or time constraints?
 
-TODO
-
-Your submission will need to complete X rollouts in Y minutes. 
+Your submission will need to complete 1 rollout per task, for ~500 tasks in 7 minutes. 
+You may expect that the evaluator will spend most of the time in actions sampling since 
+the environment alone can step through all the tasks in around 30 seconds. 
+Please, use parallel enviornments to make your agents more time-efficient. 
 
 The machine where the submission will run will have following specifications:
 * 1 NVIDIA T4 GPU
@@ -399,7 +400,14 @@ The machine where the submission will run will have following specifications:
 
 ## Setting Up Details [Docker]
 
-With Docker, TODO...
+Pull the official docker image with installed environment:
+
+```sh
+docker pull iglucontest/gridworld_env:latest
+```
+
+This image is based on `nvidia/cuda:11.6.1-cudnn8-runtime-ubuntu20.04` base image. If you want to have a custom base,
+use the following [Dockerfile](https://github.com/iglu-contest/gridworld/blob/master/docker/Dockerfile)
 
 ## Testing IGLU framework:
 
@@ -432,7 +440,7 @@ while not done:
 
 # Baselines
 
-Although we are looking to supply this repository with baselines... TODO
+See [baselines section](https://gitlab.aicrowd.com/aicrowd/challenges/iglu-challenge-2022/iglu-2022-rl-task-starter-kit#how-can-i-get-going-with-an-existing-baseline)
 
 # How to Test and Debug Locally
 
@@ -446,10 +454,8 @@ More information on submissions can be found at our [SUBMISSION.md](/docs/submis
 
 ## Contributors
 
-TODO
-
 - [Dipam Chakraborty](https://www.aicrowd.com/participants/dipam)
-
+- Artem Zholus
 
 # 📎 Important links
 

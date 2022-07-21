@@ -8,6 +8,12 @@ This repository is the IGLU Challenge **Starter kit**! It contains:
 *  **The procedure** for best practices and information on how we evaluate your agent, etc.
 *  **Starter code** for you to get started!
 
+## IGLU Gridworld Environment
+
+Some updates are expected to the environment during the warm up round. Please install the latest version being used for the competition mentioned below.
+
+**Current version (21st July onwards)**: https://github.com/iglu-contest/gridworld/tree/v0.1.0
+
 Quick Links:
 
 * [The IGLU Challenge - Competition Page](https://www.aicrowd.com/challenges/neurips-2022-iglu-challenge)

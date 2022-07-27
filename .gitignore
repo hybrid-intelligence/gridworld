@@ -149,3 +149,7 @@ cython_debug/
 
 evaluator/metrics.json
 evaluator/videos/*
+
+# Models
+.pt
+.pth

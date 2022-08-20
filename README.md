@@ -10,18 +10,21 @@ Quick Links:
 
 
 # Table of Contents
-1. [Overview](#)
-2. [Baseline performance](#Baseline_performance)
-3. [Visualization of the current baseline](#)
-4. [Method description](#)
-   1. General overview
-   2. NLP module
-   3. Heuristic module
-   4. RL module
-5. [Training data](#)
-6. [Training process](#)
-7. [Code structure](#)
-7. 
+- [**NeurIPS 2022 - IGLU Challenge** - Baseline agent](#neurips-2022---iglu-challenge---baseline-agent)
+- [Table of Contents](#table-of-contents)
+- [Overview](#overview)
+- [Baseline performance](#baseline-performance)
+- [Visualization](#visualization)
+- [Method description](#method-description)
+  - [NLP Module (Task generator)](#nlp-module-task-generator)
+  - [Heuristic Module (Subtask generator)](#heuristic-module-subtask-generator)
+  - [RL module (Subtask solver)](#rl-module-subtask-solver)
+- [Training data and process](#training-data-and-process)
+- [Performance distribution](#performance-distribution)
+- [Installation](#installation)
+  - [Training APPO](#training-appo)
+  - [Enjoy baseline](#enjoy-baseline)
+- [Code structure](#code-structure)
 
 # Overview
 

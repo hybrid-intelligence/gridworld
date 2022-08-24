@@ -31,7 +31,7 @@ from gym.spaces import Box
 
 def make_iglu(*args, **kwargs):
     custom_grid = np.ones((9, 11, 11))
-    env = GridWorld(render=True, select_and_place=True, discretize=True, max_steps=1000, render_size=(512, 512))
+    env = GridWorld(render=False, select_and_place=True, discretize=True, max_steps=1000)
     env.set_task(Task("", custom_grid))
     return env
     
@@ -126,29 +126,29 @@ class APPOHolder:
             self.rnn_states = None
 
 
-def download_weights():
-    print("Downloading weights...")
-    directory = ('./agents/run_baseline/train_dir/0005/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/' +
-             'TreeChopBaseline-iglu/checkpoint_p0/')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    run = wandb.init()
-    artifact = run.use_artifact('babycar27/iglu-checkpoints/iglu-checkpoints:v0', type='pth')
-    artifact_dir = artifact.download(
-        root='./agents/run_baseline/train_dir/0005/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/' +
-             'TreeChopBaseline-iglu/checkpoint_p0/')
-    print("Weights path - ", artifact_dir)
+#def download_weights():
+#    print("Downloading weights...")
+#    directory = ('./agents/mhb_baseline/train_dir/0001/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/' +
+#             'TreeChopBaseline-iglu/checkpoint_p0/')
+#    if not os.path.exists(directory):
+#        os.makedirs(directory)
+#    run = wandb.init()
+#    artifact = run.use_artifact('babycar27/iglu-checkpoints/iglu-checkpoints:v0', type='pth')
+#    artifact_dir = artifact.download(
+#        root='./agents/mhb_baseline/train_dir/0001/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/' +
+#             'TreeChopBaseline-iglu/checkpoint_p0/')
+#    print("Weights path - ", artifact_dir)
 
 def make_agent():
     register_custom_components()
    # env = make_iglu()
     cfg = parse_args(argv=['--algo=APPO', '--env=IGLUSilentBuilder-v0', '--experiment=TreeChopBaseline-iglu',
                            '--experiments_root=force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10',
-                           '--train_dir=./agents/run_baseline/train_dir/0005'], evaluation=True)
+                           '--train_dir=./agents/mhb_baseline/train_dir/0001'], evaluation=True)
     cfg = load_from_checkpoint(cfg)
 
     cfg.setdefault("path_to_weights",
-                   "./agents/run_baseline/train_dir/0005/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/TreeChopBaseline-iglu")
+                   "./agents/mhb_baseline/train_dir/0001/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/TreeChopBaseline-iglu")
     return APPOHolder(cfg)
     
 
@@ -160,9 +160,9 @@ if __name__ == "__main__":
     env = make_iglu()
     cfg = parse_args(argv=['--algo=APPO', '--env=IGLUSilentBuilder-v0', '--experiment=TreeChopBaseline-iglu',
                            '--experiments_root=force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10',
-                           '--train_dir=./agents/run_baseline/train_dir/0005'], evaluation=True)
+                           '--train_dir=./agents/mhb_baseline/train_dir/0001'], evaluation=True)
     cfg = load_from_checkpoint(cfg)
 
-    cfg.setdefault("path_to_weights", "./agents/run_baseline/train_dir/0005/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/TreeChopBaseline-iglu")
+    cfg.setdefault("path_to_weights", "./agents/mhb_baseline/train_dir/0001/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/TreeChopBaseline-iglu")
 
     APPOHolder(cfg)

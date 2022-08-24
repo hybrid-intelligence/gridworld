@@ -1,5 +1,7 @@
 import numpy as np
-from utils import  modify, figure_to_3drelief
+import sys 
+sys.path.append("./agents/")
+from mhb_baseline.utils import  modify, figure_to_3drelief
 from nlp_model.agent import DefArgs, init_models,predict_voxel
 
 def target_to_subtasks(figure):
@@ -109,9 +111,11 @@ class DialogueFigure(Figure):
         args = DefArgs()    
         model, tokenizer, history, stats, voxel = init_models(args)
         _,right_voxel,_ = predict_voxel(dialogue, model,tokenizer, history, voxel, args)
-        print("Predicted vixel: ", right_voxel.sum(axis = 0))
-
-        right_voxel_ones = right_voxel[:, :, :]
+        #print("Predicted vixel: ", right_voxel.sum(axis = 0))
+        #print("Where blocks: ", np.where(right_voxel!=0))
+        
+        right_voxel_ones = np.ones_like(right_voxel)
+        right_voxel_ones[:,:,:] = right_voxel[:, :, :]
         right_voxel_ones[right_voxel > 0] = 1
 
         figure = self.to_multitask_format(right_voxel)

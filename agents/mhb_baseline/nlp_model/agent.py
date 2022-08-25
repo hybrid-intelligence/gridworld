@@ -5,22 +5,24 @@ from argparse import ArgumentParser
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
 import sys
-sys.path.append("agents/run_baseline/")
+sys.path.append("agents/mhb_baseline/")
 from nlp_model.utils import parse_logs, update_state_from_action, logging
 
 
 def load_model(args):
     # tokenizer
-    tokenizer = T5Tokenizer.from_pretrained("t5-large", 
+    tokenizer = T5Tokenizer.from_pretrained("./agents/mhb_baseline/nlp_model/tokenizer/", 
                                             max_source_length=args.max_source_length, 
                                             max_target_length=args.max_target_length,
                                             model_max_length=args.max_source_length)
+    #tokenizer.save_vocabulary(".")
 
     special_tokens_dict = {'additional_special_tokens': ['<Architect>', '<Builder>', '<sep1>']}
     num_added_tokens = tokenizer.add_special_tokens(special_tokens_dict)
     
     # model
-    model = T5ForConditionalGeneration.from_pretrained("t5-large")
+    model = T5ForConditionalGeneration.from_pretrained("./agents/mhb_baseline/nlp_model/model/")
+   # model.save_pretrained("model")
     model.resize_token_embeddings(len(tokenizer))
     model.load_state_dict(torch.load(args.model))
     model.cuda()
@@ -125,7 +127,7 @@ def main(args):
         
 class DefArgs():
 	def __init__(self):
-		self.model = "agents/run_baseline/nlp_model/t5-autoregressive-history-3-best.pt"
+		self.model = "agents/mhb_baseline/nlp_model/t5-autoregressive-history-3-best.pt"
 		self.out_dir = None
 		self.verbose = 0
 		self.logs_path = None
@@ -138,7 +140,7 @@ class DefArgs():
 if __name__ == '__main__':
     args = DefArgs()
     
-  #  command = input('type your command in one line: ')
+    command = input('type your command in one line: ')
     model, tokenizer, history, stats, voxel = init_models(args)
     _,rv,_ = predict_voxel(command, model,tokenizer, history, voxel, args)
     

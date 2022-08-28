@@ -106,11 +106,16 @@ class Figure():
 
         
 class DialogueFigure(Figure):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.args = DefArgs()    
+        configs = init_models(self.args)
+        self.model, self.tokenizer, self.history, self.stats, self.voxel = configs
+    	
 
     def load_figure(self, dialogue = 'put three grenn blocks on the'):
-        args = DefArgs()    
-        model, tokenizer, history, stats, voxel = init_models(args)
-        _,right_voxel,_ = predict_voxel(dialogue, model,tokenizer, history, voxel, args)
+
+        _,right_voxel,_ = predict_voxel(dialogue, self.model,self.tokenizer, self.history, self.voxel, self.args)
         #print("Predicted vixel: ", right_voxel.sum(axis = 0))
         #print("Where blocks: ", np.where(right_voxel!=0))
         

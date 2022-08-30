@@ -17,6 +17,29 @@ from generator import DialogueFigure, target_to_subtasks
 
 import numpy as np
 
+def color_random(action_space):
+    action = actions_space.sample()
+    text = observation['dialog']
+    colors_to_hotbar = {
+        'blue': 1,  # blue
+        'green': 2,  # green
+        'red': 3,  # red
+        'orange': 4,  # orange
+        'purple': 5,  # purple
+        'yellow': 6,  # yellow
+    }
+    hotbars_turned_off = []
+    for color, hotbar in colors_to_hotbar.items():
+        if color not in text:
+            hotbars_turned_off.append(hotbar)
+    hotbars_turned_off = set(hotbars_turned_off)
+    while (action - 5) in hotbars_turned_off: # actions 6 to 11 are block placements
+        action = actions_space.sample()
+    # Terminate early with 1% chance
+    user_termination = np.random.choice([True, False], p=[0.01, 0.99]) 
+    return action, user_termination
+	
+
 class APPOAgent:
     def __init__(self):
         self.actions_space = None
@@ -43,27 +66,8 @@ class APPOAgent:
         count = re.findall("<Architect>", observation['dialog'])
         
         # If bad phrase do random actions
-        if len(count) > 1:
-            action = self.actions_space.sample()
-            text = observation['dialog']
-            colors_to_hotbar = {
-                'blue': 1,  # blue
-                'green': 2,  # green
-                'red': 3,  # red
-                'orange': 4,  # orange
-                'purple': 5,  # purple
-                'yellow': 6,  # yellow
-            }
-            hotbars_turned_off = []
-            for color, hotbar in colors_to_hotbar.items():
-                if color not in text:
-                    hotbars_turned_off.append(hotbar)
-            hotbars_turned_off = set(hotbars_turned_off)
-            while (action - 5) in hotbars_turned_off: # actions 6 to 11 are block placements
-                action = self.actions_space.sample()
-            # Terminate early with 1% chance
-            user_termination = np.random.choice([True, False], p=[0.01, 0.99]) 
-            return action, user_termination
+        if len(count) > 1:            
+            return self.color_random(self.action_space)
         
         if self.jump_flag == 0:
             
@@ -76,7 +80,13 @@ class APPOAgent:
                 command = observation['dialog'].replace("<Architect>", "").replace("<Builder>", "")
                 if self.log: print("Command: ", command)
                 # Predict full target and transform it to baseline(multitask) format
-                self.figure.load_figure(command)
+                try:
+                	self.figure.load_figure(command)
+                except Exception as e:
+                	print(e)
+                	print(command)
+                	return self.color_random(self.action_space)
+                	
                 self.generator = target_to_subtasks(self.figure)
                 try:
                         coord, task = next(self.generator)

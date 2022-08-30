@@ -67,7 +67,7 @@ class APPOAgent:
         
         # If bad phrase do random actions
         if len(count) > 1:            
-            return color_random(self.action_space)
+            return color_random(self.actions_space)
         
         if self.jump_flag == 0:
             
@@ -85,7 +85,7 @@ class APPOAgent:
                 except Exception as e:
                 	print(e)
                 	print(command)
-                	return color_random(self.action_space)
+                	return color_random(self.actions_space)
                 	
                 self.generator = target_to_subtasks(self.figure)
                 try:

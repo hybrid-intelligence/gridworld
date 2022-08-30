@@ -17,7 +17,7 @@ from generator import DialogueFigure, target_to_subtasks
 
 import numpy as np
 
-def color_random(actions_space):
+def color_random(observation, actions_space):
     action = actions_space.sample()
     text = observation['dialog']
     colors_to_hotbar = {
@@ -67,7 +67,7 @@ class APPOAgent:
         
         # If bad phrase do random actions
         if len(count) > 1:            
-            return color_random(self.actions_space)
+            return color_random(observation, self.actions_space)
         
         if self.jump_flag == 0:
             
@@ -85,7 +85,7 @@ class APPOAgent:
                 except Exception as e:
                 	print(e)
                 	print(command)
-                	return color_random(self.actions_space)
+                	return color_random(observation, self.actions_space)
                 	
                 self.generator = target_to_subtasks(self.figure)
                 try:

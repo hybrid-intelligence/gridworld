@@ -17,7 +17,7 @@ from generator import DialogueFigure, target_to_subtasks
 
 import numpy as np
 
-def color_random(action_space):
+def color_random(actions_space):
     action = actions_space.sample()
     text = observation['dialog']
     colors_to_hotbar = {

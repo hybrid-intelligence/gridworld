@@ -49,7 +49,8 @@ class ResnetEncoderWithTarget(EncoderBase):
         abs_compass_val = 180
         max_inventory_val = 20
         max_obs_value = 255
-
+        
+        #print(obs_dict['inventory'])
         inventory_compass = torch.cat(
             [obs_dict['inventory'] / max_inventory_val, (obs_dict['compass'] + abs_compass_val) / max_compass_val], -1)
         inv_comp_emb = self.inventory_compass_emb(inventory_compass)

@@ -103,13 +103,13 @@ def main(args):
         
         history.append((command, actions))
         
-        print(len(np.where(voxel!=0)[0]))
-        print(voxel.sum(axis = 1))
+    #    print(len(np.where(voxel!=0)[0]))
+      #  print(voxel.sum(axis = 1))
         
         right_voxel = np.transpose(voxel, (1, 0, 2))
         
-        print(len(np.where(right_voxel!=0)[0]))
-        print(right_voxel.sum(axis = 0))
+       # print(len(np.where(right_voxel!=0)[0]))
+        #print(right_voxel.sum(axis = 0))
         
 	        
         
@@ -142,11 +142,14 @@ if __name__ == '__main__':
     
     command = input('type your command in one line: ')
     model, tokenizer, history, stats, voxel = init_models(args)
-    _,rv,_ = predict_voxel(command, model,tokenizer, history, voxel, args)
+    history,rv,voxel = predict_voxel(command, model,tokenizer, history, voxel, args)
     
     
     print(len(np.where(rv!=0)[0]))
     print(rv.sum(axis = 0))
+    
+    print("history: ", history)
+    print(voxel.sum(axis = 0))
     
    # main(args)
     

@@ -7,7 +7,7 @@ from gridworld.tasks import Tasks
 from evaluator.iglu_evaluator import TaskEpisodeTracker
 
 from evaluator.utils import convert_keys_to_string, read_json_file
-
+import cv2
 
 def create_single_env(render, action_space_name='walking'):
     return gym.make('IGLUGridworld-v0' if render else 'IGLUGridworldVector-v0',
@@ -100,14 +100,22 @@ def evaluate(LocalEvalConfig):
     reset_data = observations, rewards, dones, infos
    
     actions, user_terminations = agent.register_reset(reset_data)
+    
+    episode = 0
+    
+    out = cv2.VideoWriter(f'video/{episode}.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
+                                       20, (64, 64))
     while True:
         env_outputs = [env.step(action)
                         for env, action in zip(envs, actions)]
         observations, rewards, dones, infos = [], [], [], []
-
+        
+        episode+=1
         for i, eo in enumerate(env_outputs):
 
             obs, rew, done, info = eo
+         #   print(obs['pov'].shape)
+            out.write(cv2.resize(obs['pov'][:,:,::-1], (64, 64)))
             episode_tracker.step(i, obs, rew, info, actions[i])
             user_termination = user_terminations[i]
             if done or user_termination:
@@ -134,6 +142,7 @@ def evaluate(LocalEvalConfig):
             rewards.append(rew)
             dones.append(done)
             infos.append(info)
+        
 
         step_data = observations, rewards, dones, infos
 
@@ -152,6 +161,7 @@ def evaluate(LocalEvalConfig):
 
     episode_tracker.write_metrics_to_disk()
     print("Rollout phase complete")
+    out.release()
 
     ### Calculate scores    
     all_episodes_data = read_json_file(LocalEvalConfig.REWARDS_FILE)

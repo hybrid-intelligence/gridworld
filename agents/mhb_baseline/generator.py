@@ -111,18 +111,38 @@ class DialogueFigure(Figure):
         self.args = DefArgs()    
         configs = init_models(self.args)
         self.model, self.tokenizer, self.history, self.stats, self.voxel = configs
+        self.full_voxel = None
     	
-
+    def clear_history(self):
+        self.history = []
+        self.voxel = np.zeros((11, 9, 11))
+        return 
+    
     def load_figure(self, dialogue = 'put three grenn blocks on the'):
-
-        _,right_voxel,_ = predict_voxel(dialogue, self.model,self.tokenizer, self.history, self.voxel, self.args)
-        #print("Predicted vixel: ", right_voxel.sum(axis = 0))
-        #print("Where blocks: ", np.where(right_voxel!=0))
+        last_voxel = np.zeros((9,11,11))
+        current_voxel = np.zeros((9,11,11))
+        print("dlen:", len(dialogue))
+        for command in dialogue:
+            print(command)
+            last_voxel[:,:,:] = current_voxel[:,:,:]
+            self.history,right_voxel, self.voxel = predict_voxel(command, self.model ,self.tokenizer, 
+                                            self.history.copy(), self.voxel.copy(), self.args)
+            current_voxel[:,:,:] = right_voxel[:,:,:]        
+        right_voxel = current_voxel-last_voxel
+        print(current_voxel.sum(axis = 0))
+        print(last_voxel.sum(axis = 0))
         
-        right_voxel_ones = np.ones_like(right_voxel)
-        right_voxel_ones[:,:,:] = right_voxel[:, :, :]
-        right_voxel_ones[right_voxel > 0] = 1
-
+#         right_voxel = np.zeros((9,11,11))
+#         right_voxel[0, 1:4, 1:4] = 1
+        count_of_blocks = len(np.where(right_voxel!=0)[0])
+        print("Count of bloks: ", count_of_blocks)
+        if count_of_blocks == 0:
+            right_voxel = current_voxel[:,:,:]
+        count_of_blocks = len(np.where(right_voxel!=0)[0])
+        print("Count of bloks: ", count_of_blocks)
+#         right_voxel = np.zeros((9,11,11))
+#         right_voxel[0, 5, 6:] = 1 
+        self.full_voxel = right_voxel
         figure = self.to_multitask_format(right_voxel)
         self.figure_parametrs['name'] = dialogue
         self.figure_parametrs['original'] = right_voxel

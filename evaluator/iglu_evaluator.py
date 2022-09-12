@@ -103,6 +103,7 @@ class IGLUMetricsTracker:
         self.episode_length = 1
 
     def step(self, observation, reward, info, action):
+      #  print(action)
         self.step_data["observations"].append(observation)
         self.step_data["rewards"].append(reward)
         self.step_data["infos"].append(info)

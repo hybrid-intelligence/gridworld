@@ -55,7 +55,7 @@ def update_state_from_action(args, state, action, init_block, log_file=None):
     action = action.strip()
     command = action.split()[0]
     ok = True
-    
+   #print(action)
     if not command in ['pick', 'put']:
         if args.verbose > 1:
             logging(log_file, f'action: {action}, Invalid command {command}')

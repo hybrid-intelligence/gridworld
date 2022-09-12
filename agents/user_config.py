@@ -1,5 +1,6 @@
 
 from agents.random_agent import RandomBuilderAgent
+from agents.color_correct_random_agent import RandomBuilderAgent
 from agents.mhb_baseline.agent import APPOAgent
 ###################################################################
 #####        Specify your agent and other configs here        #####

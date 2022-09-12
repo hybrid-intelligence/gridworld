@@ -9,12 +9,12 @@ import re
 import sys
 sys.path.append("agents/mhb_baseline/")
 from models.models import ResnetEncoderWithTarget
-
+import matplotlib.pyplot as plt
 from step_by_step_enjoy import APPOHolder, make_agent
 from generator import DialogueFigure
 from nlp_model.agent import DefArgs, init_models, predict_voxel
 from generator import DialogueFigure, target_to_subtasks 
-
+import cv2
 import numpy as np
 
 def color_random(observation, actions_space):
@@ -47,14 +47,20 @@ class APPOAgent:
         self.steps = 0
         self.args = DefArgs()
         self.figure = DialogueFigure()
-        self.generator = None
-        self.min_inventory_value = 5
-        self.max_inventory_value = 12
-        self.color_space = (self.min_inventory_value, self.max_inventory_value)
-        self.model, self.tokenizer, self.history, self.stats, self.voxel = init_models(self.args)
+        self.subtasks = None        
+        self.move_action = [6,7,8,9,10,11]
+        self.model, self.tokenizer, self.history, self.stats, self.voxel = init_models(self.args)        
         self.jump_flag = 0
-        self.action = -1
+        self.action = None
+        self.last_action = None
         self.log = False
+        self.jump_count = 2
+        self.obs_stack = [None, None]
+        self.start = True
+        self.last_was_action = False
+        self.termation = False
+        self.action_queue = []
+        self.commands = None
      #   download_weights()
         self.agent = make_agent()
 
@@ -62,65 +68,115 @@ class APPOAgent:
         self.actions_space = action_space
         
     def act(self, observation, reward, done, info):
-        user_termination = False        
-        count = re.findall("<Architect>", observation['dialog'])
+      if self.start:
+              commands = self.dialogue_to_commands(observation['dialog'])
+              self.commands = commands
+              self.figure.load_figure(commands)
+              self.subtasks = target_to_subtasks(self.figure)
+              #print("do subtasks")
+              self.target_grid, self.termation = self.try_update_task()
+              self.start = False                
+      action_generation, action = self.do_action_from_stack()          
+      if action_generation:
+          self.last_action = self.action
+          self.update_obs_stack(observation)
+          self.target_grid, self.termation = self.try_update_task()
+         # print(self.termation)
+          observation_for_model = self.obs_for_model(observation)
+          action = self.agent.act([observation_for_model])              
+          self.action = action[0]    
+          if self.action == 17:
+             #  print("Pass action")
+               action = 0
+               self.action = 0
+          if action in self.move_action:
+            action = self.choose_right_color(action)
+            jumps = [5 for _ in range(self.jump_count - 1)]
+            self.put([ action,*jumps])
+            action = 5
+          elif self.termation is not True:
+            self.termation = False  
+      if self.termation == True:
+        self.start = True
+        self.figure.clear_history()
+     # print(self.termation)
+      return action, self.termation
+    
+    def put(self, actions):
+        self.action_queue = actions
+        return
+    
+    def update_obs_stack(self, observation):
+        kernel = np.ones((5,5),np.float32)/25
+        self.obs_stack[-1], self.obs_stack[0] = self.obs_stack[0], self.obs_stack[-1]
+        img = observation['pov']
+        smooth_img = cv2.filter2D(img,-1,kernel)
+        self.obs_stack[-1] = smooth_img
+        return
+    
+    def put_success(self):
+        v = np.random.random()
+        if np.sum(self.target_grid[0])==0 and v>0.3:
+            return True
+        if (self.obs_stack[0] is None) or (self.obs_stack[1] is None):
+            print("Not enoth pictures!")
+            return False
+        diff = abs(self.obs_stack[-1].mean(axis = 2) - self.obs_stack[0].mean(axis = 2))
+        num = np.random.randint(0,100)
+        xc, yc = np.array(diff.shape)//2
+        thresh = 60
+        if diff[xc, yc] >= thresh:
+           # plt.imsave("imgs/true_diff%d.png"%num,diff)
+            return True
+      #  plt.imsave("imgs/false_diff%d.png"%num,diff)
+        return False
         
-        # If bad phrase do random actions
-        if len(count) > 1:            
-            return color_random(observation, self.actions_space)
-        
-        if self.jump_flag == 0:
-            
-            # First iteration (predict full target + generate first subtask)
-            if self.steps == 0:
-                if self.log:
-                    print()
-                    print("-----------------")           
-             
-                command = observation['dialog'].replace("<Architect>", "").replace("<Builder>", "")
-                if self.log: print("Command: ", command)
-                # Predict full target and transform it to baseline(multitask) format
+    def try_update_task(self):
+      #  print(self.start)
+        if (self.last_action is not None) or self.start:
+           # print("Here")
+            if (self.last_action in self.move_action and self.put_success()) or self.start:
                 try:
-                	self.figure.load_figure(command)
+                  #  print("I am here!")
+                    _, target_grid = next(self.subtasks)
+                    print("Change task!")
+                  #  print(target_grid.sum(axis = 0))
+                    return target_grid, False
                 except Exception as e:
-                	print(e)
-                	print(command)
-                	return color_random(observation, self.actions_space)
-                	
-                self.generator = target_to_subtasks(self.figure)
-                try:
-                        coord, task = next(self.generator)
-                        self.target_grid = task[:,:,:]
-                except StopIteration:
-                        user_termination = True
-                        self.steps = 0
-                        
-                        if self.log:
-                            print("stop")
-                if self.log:
-                    print("======================================================================")
-                    print("Update task: ", self.target_grid.sum(axis = 0))
-                    print("======================================================================")
-                    print("-----------------")
-                    print()
-               
-            if ((self.action > self.color_space[0]) and (self.action < self.color_space[1]) > 0):
-                if self.log: print("Field was updated: ")
-                if self.log: print(observation['grid'].sum(axis = 0))                
-                
-            self.steps += 1 
-            obs = {'obs': observation['pov'],
-                    'compass': observation['compass'],
-                    'inventory': observation['inventory'],
-                    'target_grid': self.target_grid}   
-            action = self.agent.act([obs])
-            self.action = action
-            
-    	# If action is put-block
-        if  self.jump_flag==1 or ((self.action > self.color_space[0]) and (self.action < self.color_space[1]) > 0):
-        	if self.log: print("building ... ")
-        	tcolor = np.sum(self.target_grid)
-        	colors_to_hotbar = {
+                    print(e)
+                    return self.target_grid, True 
+       # print("Fail!")
+        return self.target_grid, self.termation
+    
+    def dialogue_to_commands(self, full_dialogue):
+        commands = re.split("(<Architect>)|(<Builder>)", full_dialogue)
+       # print(commands)
+        no_none = [command for command in commands if command is not None]
+       # print(no_none)
+        no_zero_len = [command for command in no_none if len(command)>0]
+      #  print(no_zero_len)
+        atchitect = no_zero_len[1::4]
+       # print(atchitect)
+        return atchitect
+    
+    def obs_for_model(self, observation):
+        obs = {'obs': observation['pov'],
+                'compass': observation['compass'],
+                'inventory': observation['inventory'],
+                'target_grid': self.target_grid}  
+        return obs
+    
+    def do_action_from_stack(self):
+        try:
+            action = self.action_queue.pop()
+            return False, action 
+        except:
+            return True, None
+        
+    def choose_right_color(self, action):
+        
+        #tcolor = np.sum(self.target_grid)
+        colors_to_hotbar = {
                 'blue': 1,  # blue
                 'green': 2,  # green
                 'red': 3,  # red
@@ -128,51 +184,23 @@ class APPOAgent:
                 'purple': 5,  # purple
                 'yellow': 6,  # yellow
             }
-            
-        	colors = list(colors_to_hotbar.keys())
-        	idx = list(colors_to_hotbar.values())
-            
-        	hotbar_to_color = dict(zip(idx, colors))
-        	text = observation['dialog']
-        	if self.log: print("ADD BLOCK with color: ", tcolor, hotbar_to_color[tcolor], text)
-           
-            
-            
-           
-        	self.jump_flag += 1
-        	if self.log: print(self.jump_flag)
-            
-            # Baseline need two jump
-        	if self.jump_flag< 3: 
-        	        	if self.log: print("Jump!") 
-        	        	return (5, False)
-            
-        	self.jump_flag %= 3
-        	if self.log: print(self.jump_flag)      	
-            
-        	for color in colors:
-        	        	if color in text:
-        	        	        	tcolor = colors_to_hotbar[color]
-        	action = int(self.color_space[0] + tcolor)
-        	if self.log: print("Build!")
-        	if self.log: print(action)       	
-    		
-            # After trying to put a block, we generate a new task
-        	try:
-                    coord, task = next(self.generator)
-                    self.target_grid = task[:,:,:]
-                    if self.log: print("======================================================================")
-                    if self.log: print("Update task: ", self.target_grid.sum(axis = 0))
-                    if self.log: print("======================================================================")
-        	except StopIteration:
-                    user_termination = True
-                    self.steps = 0
-                    if self.log: print("stop")
-        if done:
-        	self.steps = 0
-        	self.generator = None
-        	self.target_grid = None        
-        return action, user_termination
+        print(self.commands[-1])
+        for key_color in colors_to_hotbar:
+            if key_color in self.commands[-1]:
+                tcolor = colors_to_hotbar[key_color]
+                break
+        colors = list(colors_to_hotbar.keys())
+        idx = list(colors_to_hotbar.values())
+        hotbar_to_color = dict(zip(idx, colors))
+        action = int(5 + tcolor)
+        return 6
+        
 
-
+               
+                
+          
+          
+            
+          
+          
     

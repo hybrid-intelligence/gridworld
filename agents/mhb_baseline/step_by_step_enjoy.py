@@ -108,6 +108,7 @@ class APPOHolder:
                                           device=self.device)
 
         with torch.no_grad():
+          #  print(self.rnn_states)
             obs_torch = AttrDict(transform_dict_observations(observations))
             for key, x in obs_torch.items():
                 obs_torch[key] = torch.from_numpy(x).to(self.device).float()
@@ -118,6 +119,7 @@ class APPOHolder:
         return actions.cpu().numpy()
 
     def after_step(self, dones):
+      #  pass
         for agent_i, done_flag in enumerate(dones):
             if done_flag:
                 self.rnn_states[agent_i] = torch.zeros([get_hidden_size(self.cfg)], dtype=torch.float32,

@@ -75,7 +75,11 @@ class APPOAgent:
               self.subtasks = target_to_subtasks(self.figure)
               #print("do subtasks")
               self.target_grid, self.termation = self.try_update_task()
-              self.start = False                
+              self.start = False  
+            
+#       if len(self.commands) > 1:
+#         return color_random(observation, self.actions_space)
+    
       action_generation, action = self.do_action_from_stack()          
       if action_generation:
           self.last_action = self.action
@@ -90,16 +94,17 @@ class APPOAgent:
                action = 0
                self.action = 0
           if action in self.move_action:
+          #  print(action)
             action = self.choose_right_color(action)
+            
             jumps = [5 for _ in range(self.jump_count - 1)]
-            self.put([ action,*jumps])
+            self.put([*jumps, action])
             action = 5
           elif self.termation is not True:
             self.termation = False  
       if self.termation == True:
         self.start = True
         self.figure.clear_history()
-     # print(self.termation)
       return action, self.termation
     
     def put(self, actions):
@@ -139,7 +144,7 @@ class APPOAgent:
                 try:
                   #  print("I am here!")
                     _, target_grid = next(self.subtasks)
-                    print("Change task!")
+                  #  print("Change task!")
                   #  print(target_grid.sum(axis = 0))
                     return target_grid, False
                 except Exception as e:
@@ -175,7 +180,7 @@ class APPOAgent:
         
     def choose_right_color(self, action):
         
-        #tcolor = np.sum(self.target_grid)
+       # tcolor = np.sum(self.target_grid)
         colors_to_hotbar = {
                 'blue': 1,  # blue
                 'green': 2,  # green
@@ -184,7 +189,7 @@ class APPOAgent:
                 'purple': 5,  # purple
                 'yellow': 6,  # yellow
             }
-        print(self.commands[-1])
+     #   print(self.commands[-1])
         for key_color in colors_to_hotbar:
             if key_color in self.commands[-1]:
                 tcolor = colors_to_hotbar[key_color]
@@ -193,7 +198,7 @@ class APPOAgent:
         idx = list(colors_to_hotbar.values())
         hotbar_to_color = dict(zip(idx, colors))
         action = int(5 + tcolor)
-        return 6
+        return action
         
 
                

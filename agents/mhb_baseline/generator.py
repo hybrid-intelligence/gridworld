@@ -118,35 +118,52 @@ class DialogueFigure(Figure):
         self.voxel = np.zeros((11, 9, 11))
         return 
     
-    def load_figure(self, dialogue = 'put three grenn blocks on the'):
-        last_voxel = np.zeros((9,11,11))
-        current_voxel = np.zeros((9,11,11))
-        print("dlen:", len(dialogue))
-        for command in dialogue:
-            print(command)
-            last_voxel[:,:,:] = current_voxel[:,:,:]
-            self.history,right_voxel, self.voxel = predict_voxel(command, self.model ,self.tokenizer, 
-                                            self.history.copy(), self.voxel.copy(), self.args)
-            current_voxel[:,:,:] = right_voxel[:,:,:]        
-        right_voxel = current_voxel-last_voxel
-        print(current_voxel.sum(axis = 0))
-        print(last_voxel.sum(axis = 0))
+    def right_color(self, figure):
+        nlp_color = [-1, "red","orange","yellow","green","blue","purple"]
+        right_color = {
+            'blue': 1,  # blue
+            'green': 2,  # green
+            'red': 3,  # red
+            'orange': 4,  # orange
+            'purple': 5,  # purple
+            'yellow': 6,  # yellow
+        }
+        true_colors = [right_color[nlp_color[i]] for i in range(1,7)]
+        figure[figure==1],figure[figure==2],figure[figure==3],\
+        figure[figure==4],figure[figure==5],figure[figure==6] = true_colors
+        return figure
+    
+    def load_figure(self, dialogue = None, raw_figure = None):
         
-#         right_voxel = np.zeros((9,11,11))
-#         right_voxel[0, 1:4, 1:4] = 1
-        count_of_blocks = len(np.where(right_voxel!=0)[0])
-        print("Count of bloks: ", count_of_blocks)
-        if count_of_blocks == 0:
-            right_voxel = current_voxel[:,:,:]
-        count_of_blocks = len(np.where(right_voxel!=0)[0])
-        print("Count of bloks: ", count_of_blocks)
-#         right_voxel = np.zeros((9,11,11))
-#         right_voxel[0, 5, 6:] = 1 
-        self.full_voxel = right_voxel
-        figure = self.to_multitask_format(right_voxel)
+        if not isinstance(dialogue, type(None)):
+            last_voxel = np.zeros((9,11,11))
+            current_voxel = np.zeros((9,11,11))
+            for command in dialogue:
+                last_voxel[:,:,:] = current_voxel[:,:,:]
+                self.history,right_voxel, self.voxel = predict_voxel(command, self.model ,self.tokenizer, 
+                                                self.history.copy(), self.voxel.copy(), self.args)
+                current_voxel[:,:,:] = right_voxel[:,:,:] 
+                
+            right_voxel = current_voxel-last_voxel
+            right_voxel_bin = np.zeros_like(right_voxel)
+            right_voxel_bin[right_voxel>0] = 1
+
+            count_of_blocks = len(np.where(right_voxel!=0)[0])
+            if count_of_blocks == 0:
+                right_voxel = current_voxel[:,:,:]
+            count_of_blocks = len(np.where(right_voxel!=0)[0])
+            
+           # print("Fig color: ", right_voxel.mean())
+        elif not isinstance(raw_figure, type(None)):
+            right_voxel = raw_figure[:,:,:]
+            
+        right_voxel_bin = np.zeros_like(right_voxel)
+        right_voxel_bin[right_voxel>0] = 1
+        
+        figure = self.to_multitask_format(right_voxel_bin)
         self.figure_parametrs['name'] = dialogue
-        self.figure_parametrs['original'] = right_voxel
-        self.figure_parametrs['color'] = right_voxel
+        self.figure_parametrs['original'] = self.right_color(right_voxel)
+        self.figure_parametrs['color'] = self.right_color(right_voxel)
         self.figure_parametrs['relief'] = self.relief
         return figure
 

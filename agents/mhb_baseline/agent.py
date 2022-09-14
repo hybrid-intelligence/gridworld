@@ -77,8 +77,8 @@ class APPOAgent:
               self.target_grid, self.termation = self.try_update_task()
               self.start = False  
             
-#       if len(self.commands) > 1:
-#         return color_random(observation, self.actions_space)
+      if len(self.commands) > 1:
+              return color_random(observation, self.actions_space)
     
       action_generation, action = self.do_action_from_stack()          
       if action_generation:

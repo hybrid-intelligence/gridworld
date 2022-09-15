@@ -1,12 +1,6 @@
-import time
-
 import numpy as np
-from gridworld.data import IGLUDataset
-from gridworld.tasks import Tasks, Task
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
-
-from evaluator.iglu_evaluator import IGLUMetricsTracker
 
 
 def parse_logs(logs, history_len=None):
@@ -147,7 +141,7 @@ def update_state_from_action(args, state, action, init_block, log_file=None):
     return state, ok
 
 
-def plot_voxel(voxel, text=None):
+def plot_grid(voxel, text=None):
     idx2color = {1: 'blue', 2: 'green', 3: 'red', 4: 'orange', 5: 'purple', 6: 'yellow'}
     vox = voxel.transpose(1, 2, 0)
     colors = np.empty(vox.shape, dtype=object)
@@ -179,58 +173,6 @@ def plot_voxel(voxel, text=None):
         plt.annotate(text, (0, 0), (0, -20), xycoords='axes fraction', textcoords='offset points',
                      verticalalignment='top', wrap=True)
     return fig
-    # plt.show()
-
-
-# class IGLUMetricsTracker:
-#     def __init__(self, task_key, subtask, first_obs):
-#         self.init = Tasks.to_dense(subtask.starting_grid)
-#         self.synthetic_task = Task(
-#             # create a synthetic task with only diff blocks.
-#             # blocks to remove have negative ids.
-#             '', target_grid=subtask.target_grid - self.init
-#         )
-#         self.synthetic_target_grid_size = self.synthetic_task.target_size
-#         self.task_key = task_key
-#         self.total_reward = 0
-#         self.subtask = subtask
-#         self.stats = {}
-#         self.step_data = {"first_obs": first_obs,
-#                           "observations": [],
-#                           "rewards": [],
-#                           "infos": [],
-#                           "time": [],
-#                           "actions": []}
-#
-#     def step(self, observation, reward, info, action):
-#         self.step_data["observations"].append(observation)
-#         self.step_data["rewards"].append(reward)
-#         self.step_data["infos"].append(info)
-#         self.step_data["actions"].append(action)
-#         self.step_data["time"].append(time.time())
-#         self.total_reward += reward
-#
-#     def get_metrics(self, obs):
-#         argmax = self.synthetic_task.argmax_intersection(obs['grid'])
-#         synthetic_obs = obs['grid'] - self.init
-#         maximal_intersection = self.synthetic_task.get_intersection(synthetic_obs, *argmax)
-#
-#         precision = maximal_intersection / (self.synthetic_target_grid_size + 1e-10)
-#         recall = maximal_intersection / (len(synthetic_obs.nonzero()[0]) + 1e-10)
-#         f1 = 2 * precision * recall / (precision + recall + 1e-10)
-#         self.stats['completion_rate_f1'] = f1
-#         self.stats['precision'] = precision
-#         self.stats['recall'] = recall
-#         self.stats['total_reward'] = self.total_reward
-#
-#         return self.stats
-
-
-def compute_metric(grid, target_grid):
-    sb = IGLUDataset(task_kwargs={'invariant': False}).reset()
-    sb.target_grid = target_grid
-    igm = IGLUMetricsTracker(None, sb, {'grid': grid})
-    return igm.get_metrics({'grid': grid})
 
 
 def main():
@@ -245,8 +187,8 @@ def main():
               ]
     for block in blocks:
         example[block[0], block[1], block[2]] = 6
-    plot_voxel(example,
-               text="<Architect> Facing north, place a yellow block four spaces from the eastern edge. Place another yellow block on top of that one.").show()
+    plot_grid(example,
+              text="<Architect> Facing north, place a yellow block four spaces from the eastern edge. Place another yellow block on top of that one.").show()
 
 
 if __name__ == '__main__':

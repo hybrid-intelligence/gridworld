@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 
-from agents.mhb_baseline.nlp_model.agent import get_dialog, GridPredictor
-from agents.mhb_baseline.nlp_model.utils import plot_voxel
+from agents.mhb_baseline.nlp_model.agent import GridPredictor
+from agents.mhb_baseline.nlp_model.utils import plot_grid
 from evaluator.iglu_evaluator import IGLUMetricsTracker
 
 
@@ -12,10 +12,18 @@ def compute_metric(grid, subtask):
     return igm.get_metrics({'grid': grid})
 
 
+def get_dialog(subtask):
+    import gym
+    env = gym.make('IGLUGridworld-v0')
+    env.set_task(subtask)
+    obs = env.reset()
+    return obs['dialog']
+
+
 def main():
     grid_predictor = None
 
-    # os.environ['IGLU_DATA_PATH'] = 'iglu_data'
+    os.environ['IGLU_DATA_PATH'] = 'iglu_data'
 
     from gridworld.tasks import Task
 
@@ -42,9 +50,9 @@ def main():
         results = {'F1': f1_score}
         total_score.append(f1_score)
         results_str = " ".join([f"{metric}: {value}" for metric, value in results.items()])
-        plot_voxel(predicted_grid, text=str_id + ' ' + f'({results_str})' + "\n" + dialog).savefig(
+        plot_grid(predicted_grid, text=str_id + ' ' + f'({results_str})' + "\n" + dialog).savefig(
             f'./plots/{str_id}-predicted.png')
-        plot_voxel(subtask.target_grid, text=str_id + " (Ground truth)\n" + dialog).savefig(
+        plot_grid(subtask.target_grid, text=str_id + " (Ground truth)\n" + dialog).savefig(
             f'./plots/{str_id}-gt.png')
 
     print('Total F1 score:', np.mean(total_score))

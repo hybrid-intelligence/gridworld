@@ -2,12 +2,9 @@ import os
 
 import torch
 import numpy as np
-from pydantic import BaseModel
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-# from utils import parse_logs, update_state_from_action, logging, plot_voxel, compute_metric
-from agents.mhb_baseline.nlp_model.utils import plot_voxel, compute_metric, update_state_from_action, logging, \
-    parse_logs
+from agents.mhb_baseline.nlp_model.utils import update_state_from_action, logging, parse_logs
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -150,12 +147,3 @@ class GridPredictor:
                 for k in range(v.shape[2]):
                     if v[i, j, k] in remapping:
                         v[i, j, k] = remapping[v[i, j, k]]
-
-
-def get_dialog(subtask):
-    import gym
-    env = gym.make('IGLUGridworld-v0')
-    env.set_task(subtask)
-    obs = env.reset()
-    return obs['dialog']
-

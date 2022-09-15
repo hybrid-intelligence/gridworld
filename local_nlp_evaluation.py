@@ -3,7 +3,13 @@ import os
 import numpy as np
 
 from agents.mhb_baseline.nlp_model.agent import get_dialog, GridPredictor
-from agents.mhb_baseline.nlp_model.utils import plot_voxel, compute_metric
+from agents.mhb_baseline.nlp_model.utils import plot_voxel
+from evaluator.iglu_evaluator import IGLUMetricsTracker
+
+
+def compute_metric(grid, subtask):
+    igm = IGLUMetricsTracker(None, subtask, {})
+    return igm.get_metrics({'grid': grid})
 
 
 def main():
@@ -32,7 +38,7 @@ def main():
         if not os.path.exists('plots'):
             os.makedirs('plots')
 
-        f1_score = round(compute_metric(predicted_grid, subtask.target_grid)['completion_rate_f1'], 3)
+        f1_score = round(compute_metric(predicted_grid, subtask)['completion_rate_f1'], 3)
         results = {'F1': f1_score}
         total_score.append(f1_score)
         results_str = " ".join([f"{metric}: {value}" for metric, value in results.items()])

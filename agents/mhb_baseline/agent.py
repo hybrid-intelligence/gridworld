@@ -21,8 +21,8 @@ import numpy as np
 
 class MultitaskHierarchicalAgent:
     def __init__(self):
-        # todo reverse to GridPredictor
-        self.grid_predictor = FakeGridPredictor()
+        # self.grid_predictor = FakeGridPredictor()
+        self.grid_predictor = GridPredictor()
 
         self.actions_space = None
         self.target_grid = None

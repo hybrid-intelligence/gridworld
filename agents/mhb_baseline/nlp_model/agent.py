@@ -103,6 +103,20 @@ def coord_to_voxel(coordinates):
     return voxel
 
 
+class FakeGridPredictor:
+    def predict_grid(self, dialog, initial_grid=None):
+        result = np.zeros((9, 11, 11))
+        # result[0, 5, 5] = 2
+        # result[1, 5, 5] = 2
+        # result[2, 5, 5] = 2
+        result[0, 5, 5] = 6
+        result[0, 4, 5] = 6
+        result[0, 3, 5] = 6
+        result[0, 2, 5] = 6
+        result[0, 1, 5] = 6
+        return result
+
+
 class GridPredictor:
     def __init__(self):
         self.args = DefArgs()

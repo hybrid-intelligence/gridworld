@@ -1,8 +1,10 @@
 import numpy as np
-import sys 
+import sys
+
 sys.path.append("./agents/")
-from mhb_baseline.utils import  modify, figure_to_3drelief
-from nlp_model.agent import DefArgs, init_models,predict_voxel
+from mhb_baseline.utils import modify, figure_to_3drelief
+from nlp_model.agent import DefArgs, init_models, predict_voxel
+
 
 def target_to_subtasks(figure):
     zh, xh, yh = figure.hole_indx
@@ -11,7 +13,7 @@ def target_to_subtasks(figure):
     color_plane = figure.figure_parametrs['color']
     X, Y = np.where(figure.relief != 0)
     addtional_tower_remote = (2, 2)
-    #generate main blocks
+    # generate main blocks
     for x, y in zip(X, Y):
         for z in range(targets_plane[x, y]):
             custom_grid = np.zeros((9, 11, 11))
@@ -28,8 +30,8 @@ def target_to_subtasks(figure):
             last_height = 0
             z = 0
             # generate additional blocks
-          #  print("Holes^")
-           #print(zh[holes_in_xy])
+            #  print("Holes^")
+            # print(zh[holes_in_xy])
             for height in zh[holes_in_xy]:
                 for z in range(last_height, height):
                     custom_grid = np.zeros((9, 11, 11))
@@ -39,9 +41,9 @@ def target_to_subtasks(figure):
                 custom_grid = np.zeros((9, 11, 11))
                 custom_grid[height, x, y] = -1
                 last_height = height
-                #make window
+                # make window
                 yield (x - 5, height - 1, y - 5, -1), custom_grid
-            #remove additional blocks
+            # remove additional blocks
             if len(additional_blocks) > 0:
                 for z, x, y in additional_blocks[::-1]:
                     custom_grid = np.zeros((9, 11, 11))
@@ -70,16 +72,16 @@ class Figure():
         if figure:
             self.to_multitask_format(figure)
 
-    def to_multitask_format(self, figure_witn_colors):
-        figure = np.zeros_like(figure_witn_colors)
-        figure[figure_witn_colors > 0] = 1
+    def to_multitask_format(self, figure_with_colors):
+        figure = np.zeros_like(figure_with_colors)
+        figure[figure_with_colors > 0] = 1
         self.figure = figure.copy()
         _, _, full_figure = self.simplify()
         full_figure[full_figure != 0] = 1
         blocks = np.where((full_figure - self.figure) != 0)
         ind = np.lexsort((blocks[0], blocks[2], blocks[1]))
         self.hole_indx = (blocks[0][ind], blocks[1][ind], blocks[2][ind])
-        figure_parametrs = {'figure': self.figure, 'color_': figure_witn_colors}
+        figure_parametrs = {'figure': self.figure, 'color_': figure_with_colors}
         self.figure_parametrs = figure_parametrs
         return figure
 
@@ -90,7 +92,7 @@ class Figure():
             target, relief = figure_to_3drelief(self.figure)
 
             relief = relief.max(axis=0)
-            ones = np.ones((11,11)) * np.arange(1,10).reshape(-1,1,1)
+            ones = np.ones((11, 11)) * np.arange(1, 10).reshape(-1, 1, 1)
 
             ones[ones <= relief] = 1
             ones[:, relief == 0] = 0
@@ -104,22 +106,22 @@ class Figure():
             raise Exception("The figure is not initialized! Use 'make_task' method to do it!")
         return relief, holes, full_figure
 
-        
+
 class DialogueFigure(Figure):
     def __init__(self, *args):
         super().__init__(*args)
-        self.args = DefArgs()    
+        self.args = DefArgs()
         configs = init_models(self.args)
         self.model, self.tokenizer, self.history, self.stats, self.voxel = configs
         self.full_voxel = None
-    	
+
     def clear_history(self):
         self.history = []
         self.voxel = np.zeros((11, 9, 11))
-        return 
-    
+        return
+
     def right_color(self, figure):
-        nlp_color = [-1, "red","orange","yellow","green","blue","purple"]
+        nlp_color = [-1, "red", "orange", "yellow", "green", "blue", "purple"]
         right_color = {
             'blue': 1,  # blue
             'green': 2,  # green
@@ -128,44 +130,18 @@ class DialogueFigure(Figure):
             'purple': 5,  # purple
             'yellow': 6,  # yellow
         }
-        true_colors = [right_color[nlp_color[i]] for i in range(1,7)]
-        figure[figure==1],figure[figure==2],figure[figure==3],\
-        figure[figure==4],figure[figure==5],figure[figure==6] = true_colors
+        true_colors = [right_color[nlp_color[i]] for i in range(1, 7)]
+        figure[figure == 1], figure[figure == 2], figure[figure == 3], \
+        figure[figure == 4], figure[figure == 5], figure[figure == 6] = true_colors
         return figure
-    
-    def load_figure(self, dialogue = None, raw_figure = None):
-        
-        if not isinstance(dialogue, type(None)):
-            last_voxel = np.zeros((9,11,11))
-            current_voxel = np.zeros((9,11,11))
-            for command in dialogue:
-                last_voxel[:,:,:] = current_voxel[:,:,:]
-                self.history,right_voxel, self.voxel = predict_voxel(command, self.model ,self.tokenizer, 
-                                                self.history.copy(), self.voxel.copy(), self.args)
-                current_voxel[:,:,:] = right_voxel[:,:,:] 
-                
-            right_voxel = current_voxel-last_voxel
-            right_voxel_bin = np.zeros_like(right_voxel)
-            right_voxel_bin[right_voxel>0] = 1
 
-            count_of_blocks = len(np.where(right_voxel!=0)[0])
-            if count_of_blocks == 0:
-                right_voxel = current_voxel[:,:,:]
-            count_of_blocks = len(np.where(right_voxel!=0)[0])
-            
-           # print("Fig color: ", right_voxel.mean())
-        elif not isinstance(raw_figure, type(None)):
-            right_voxel = raw_figure[:,:,:]
-            
+    def load_figure(self, right_voxel):
         right_voxel_bin = np.zeros_like(right_voxel)
-        right_voxel_bin[right_voxel>0] = 1
-        
+        right_voxel_bin[right_voxel > 0] = 1
+
         figure = self.to_multitask_format(right_voxel_bin)
-        self.figure_parametrs['name'] = dialogue
+        # self.figure_parametrs['name'] = dialogue
         self.figure_parametrs['original'] = self.right_color(right_voxel)
         self.figure_parametrs['color'] = self.right_color(right_voxel)
         self.figure_parametrs['relief'] = self.relief
         return figure
-
-
-

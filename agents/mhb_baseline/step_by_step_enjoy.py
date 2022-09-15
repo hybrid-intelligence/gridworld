@@ -103,6 +103,7 @@ class APPOHolder:
         return {"rl_used": 1.0}
 
     def act(self, observations, rewards=None, dones=None, infos=None):
+
         if self.rnn_states is None or len(self.rnn_states) != len(observations):
             self.rnn_states = torch.zeros([len(observations), get_hidden_size(self.cfg)], dtype=torch.float32,
                                           device=self.device)
@@ -118,14 +119,8 @@ class APPOHolder:
 
         return actions.cpu().numpy()
 
-    def after_step(self, dones):
-      #  pass
-        for agent_i, done_flag in enumerate(dones):
-            if done_flag:
-                self.rnn_states[agent_i] = torch.zeros([get_hidden_size(self.cfg)], dtype=torch.float32,
-                                                       device=self.device)
-        if all(dones):
-            self.rnn_states = None
+    def clear_hidden(self):
+        self.rnn_states = None
 
 
 #def download_weights():

@@ -1,13 +1,13 @@
 
 from agents.random_agent import RandomBuilderAgent
 from agents.color_correct_random_agent import RandomBuilderAgent
-from agents.mhb_baseline.agent import APPOAgent
+from agents.mhb_baseline.agent import MultitaskHierarchicalAgent
 ###################################################################
 #####        Specify your agent and other configs here        #####
 ###################################################################
 
 class UserConfig:
-    SingleAgent = APPOAgent
+    SingleAgent = MultitaskHierarchicalAgent
 
     # Only select between 'walking' and 'flying' (Invalid ones will default to walking)
     ActionSpaceName = 'walking'

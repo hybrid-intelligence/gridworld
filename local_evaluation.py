@@ -7,17 +7,19 @@ from gridworld.tasks import Tasks
 from evaluator.iglu_evaluator import TaskEpisodeTracker
 
 from evaluator.utils import convert_keys_to_string, read_json_file
-import cv2
 
-def create_single_env(render, action_space_name='walking'):
-    return gym.make('IGLUGridworld-v0' if render else 'IGLUGridworldVector-v0',
+
+def create_single_env(action_space_name='walking'):
+    return gym.make('IGLUGridworld-v0',
                     action_space=action_space_name,
                     size_reward=False, max_steps=500, vector_state=True)
+
 
 class TaskGenerator:
     """
     Generator for IGLU tasks
     """
+
     def __init__(self, limit_tasks):
         from gridworld.data import IGLUDataset
         print("Loading tasks")
@@ -39,7 +41,7 @@ class TaskGenerator:
         self.current_task_key = None
         self.current_task = None
 
-        self.limit_tasks = limit_tasks # Limit to first n subtasks instead of running through all tasks
+        self.limit_tasks = limit_tasks  # Limit to first n subtasks instead of running through all tasks
         self.num_tasks_emitted = 0
 
     def __len__(self):
@@ -82,47 +84,44 @@ def evaluate(LocalEvalConfig):
     observations = []
     num_steps = 0
     for i in range(num_parallel_envs):
-        env = create_single_env(render=LocalEvalConfig.RENDER, 
-                                action_space_name=action_space_name)
+        env = create_single_env(action_space_name=action_space_name)
         env.set_task(task)
-        observations.append(env.reset())
+        obs_res = env.reset()
+        observations_agent = obs_res.copy()
+        # These keys will not be provided by evaluator
+        observations_agent.pop('agentPos', None)
+        observations_agent.pop('grid', None)
+        observations.append(observations_agent)
         envs.append(env)
         current_tasks.append(task)
         episode_tracker.register_reset(
-            instance_id=i, task_key=task_key, task=task, 
-            first_obs=observations[i])
+            instance_id=i, task_key=task_key, task=task,
+            first_obs=obs_res)
         if episode_tracker.task_episodes_staged(task_key):
             task_key, task = task_generator.get_next_task()
-    
-    rewards = [0.0]*num_parallel_envs
-    dones = [False]*num_parallel_envs
-    infos = [{}]*num_parallel_envs
+
+    rewards = [0.0] * num_parallel_envs
+    dones = [False] * num_parallel_envs
+    infos = [{}] * num_parallel_envs
+
     reset_data = observations, rewards, dones, infos
-   
+
     actions, user_terminations = agent.register_reset(reset_data)
-    
-    episode = 0
-    
-    out = cv2.VideoWriter(f'video/{episode}.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
-                                       20, (64, 64))
     while True:
         env_outputs = [env.step(action)
-                        for env, action in zip(envs, actions)]
+                       for env, action in zip(envs, actions)]
         observations, rewards, dones, infos = [], [], [], []
-        
-        episode+=1
+
         for i, eo in enumerate(env_outputs):
 
             obs, rew, done, info = eo
-         #   print(obs['pov'].shape)
-            out.write(cv2.resize(obs['pov'][:,:,::-1], (64, 64)))
             episode_tracker.step(i, obs, rew, info, actions[i])
             user_termination = user_terminations[i]
             if done or user_termination:
                 # Save metrics for completed episode
                 episode_tracker.add_metrics(instance_id=i,
-                                                    final_obs=obs,
-                                                    user_termination=user_termination)
+                                            final_obs=obs,
+                                            user_termination=user_termination)
 
                 # Reset the environment
                 task_key = episode_tracker.get_task_key_for_instance(
@@ -132,17 +131,19 @@ def evaluate(LocalEvalConfig):
                     envs[i].set_task(task)
                     current_tasks[i] = task
                 obs = envs[i].reset()
-                rew, done, info = 0.0, False, {}
                 episode_tracker.register_reset(instance_id=i,
-                                                    task_key=task_key,
-                                                    task=current_tasks[i],
-                                                    first_obs=obs)
+                                               task_key=task_key,
+                                               task=current_tasks[i],
+                                               first_obs=obs)
 
-            observations.append(obs)
+            observations_agent = obs.copy()
+            # These keys will not be provided by the evaluator
+            observations_agent.pop('agentPos', None)
+            observations_agent.pop('grid', None)
+            observations.append(observations_agent)
             rewards.append(rew)
             dones.append(done)
             infos.append(info)
-        
 
         step_data = observations, rewards, dones, infos
 
@@ -161,9 +162,8 @@ def evaluate(LocalEvalConfig):
 
     episode_tracker.write_metrics_to_disk()
     print("Rollout phase complete")
-    out.release()
 
-    ### Calculate scores    
+    ### Calculate scores
     all_episodes_data = read_json_file(LocalEvalConfig.REWARDS_FILE)
 
     task_summaries = {}
@@ -186,12 +186,13 @@ def evaluate(LocalEvalConfig):
     print("===================== Final scores =======================")
     print(metrics_size_averaged)
 
+
 if __name__ == "__main__":
     # change the local config as needed
     class LocalEvalConfig:
-        MAX_EPISODES_PER_TASK = 5
+        MAX_EPISODES_PER_TASK = 1
         REWARDS_FILE = './evaluator/metrics.json'
-        LIMIT_TASKS = 5 # set this to none for all public tasks
-        RENDER = True
-    
+        LIMIT_TASKS = 40  # set this to none for all public tasks
+
+
     evaluate(LocalEvalConfig)

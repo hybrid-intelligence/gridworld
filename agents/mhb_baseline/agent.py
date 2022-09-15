@@ -13,7 +13,7 @@ from models.models import ResnetEncoderWithTarget
 import matplotlib.pyplot as plt
 from step_by_step_enjoy import APPOHolder, make_agent
 from generator import DialogueFigure
-from nlp_model.agent import DefArgs, init_models, predict_voxel, GridPredictor
+from nlp_model.agent import DefArgs, init_models, predict_voxel, GridPredictor, FakeGridPredictor
 from generator import DialogueFigure, target_to_subtasks
 import cv2
 import numpy as np
@@ -21,7 +21,8 @@ import numpy as np
 
 class MultitaskHierarchicalAgent:
     def __init__(self):
-        self.grid_predictor = GridPredictor()
+        # todo reverse to GridPredictor
+        self.grid_predictor = FakeGridPredictor()
 
         self.actions_space = None
         self.target_grid = None
@@ -184,11 +185,7 @@ class MultitaskHierarchicalAgent:
             'purple': 5,  # purple
             'yellow': 6,  # yellow
         }
-        #   print(self.commands[-1])
-        for key_color in colors_to_hotbar:
-            if key_color in self.commands[-1]:
-                tcolor = colors_to_hotbar[key_color]
-                break
+
         colors = list(colors_to_hotbar.keys())
         idx = list(colors_to_hotbar.values())
         hotbar_to_color = dict(zip(idx, colors))

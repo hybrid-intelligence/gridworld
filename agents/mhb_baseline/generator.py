@@ -141,7 +141,7 @@ class DialogueFigure(Figure):
 
         figure = self.to_multitask_format(right_voxel_bin)
         # self.figure_parametrs['name'] = dialogue
-        self.figure_parametrs['original'] = self.right_color(right_voxel)
-        self.figure_parametrs['color'] = self.right_color(right_voxel)
+        self.figure_parametrs['original'] = right_voxel
+        self.figure_parametrs['color'] = right_voxel
         self.figure_parametrs['relief'] = self.relief
         return figure

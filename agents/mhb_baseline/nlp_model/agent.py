@@ -5,7 +5,9 @@ import numpy as np
 from pydantic import BaseModel
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-from utils import parse_logs, update_state_from_action, logging, plot_voxel, compute_metric
+# from utils import parse_logs, update_state_from_action, logging, plot_voxel, compute_metric
+from agents.mhb_baseline.nlp_model.utils import plot_voxel, compute_metric, update_state_from_action, logging, \
+    parse_logs
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 

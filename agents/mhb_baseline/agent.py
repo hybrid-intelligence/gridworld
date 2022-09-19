@@ -13,7 +13,7 @@ from models.models import ResnetEncoderWithTarget
 import matplotlib.pyplot as plt
 from step_by_step_enjoy import APPOHolder, make_agent
 from generator import DialogueFigure
-from nlp_model.agent import DefArgs, init_models, predict_voxel, GridPredictor, FakeGridPredictor
+from nlp_model.agent import DefArgs, init_models, predict_voxel, GridPredictor
 from generator import DialogueFigure, target_to_subtasks
 import cv2
 import numpy as np
@@ -21,7 +21,6 @@ import numpy as np
 
 class MultitaskHierarchicalAgent:
     def __init__(self):
-        # self.grid_predictor = FakeGridPredictor()
         self.grid_predictor = GridPredictor()
 
         self.actions_space = None
@@ -46,6 +45,7 @@ class MultitaskHierarchicalAgent:
         self.commands = None
         #   download_weights()
         self.subtask_agent = make_agent()
+        
 
         self.current_dialog = None
 
@@ -53,56 +53,80 @@ class MultitaskHierarchicalAgent:
         self.actions_space = action_space
 
     def act(self, observation, reward, done, info):
-
-        if done or self.current_dialog != observation['dialog']:
-            print(observation['dialog'])
-            self.current_dialog = observation['dialog']
-            self.start = True
-            self.subtask_agent.clear_hidden()
+       # print(observation.keys())
+        if done:
+            #print(observation['dialog'])
+            #self.current_dialog = observation['dialog']
+            self.clear_variable(observation)
 
             # making empty action to safely go to next episode
             return 0, False
-
+        
         if self.start:
+            episode = np.random.randint(0,100)
+            self.out = cv2.VideoWriter(f'video/{episode}.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
+                                       20, (64, 64))
             dialog = self.dialogue_to_commands(observation['dialog'])
             self.commands = dialog
+          #  print(len(self.commands ))
             predicted_grid = self.grid_predictor.predict_grid(observation['dialog'])
-            print('-----' * 22)
+          #  print('-----' * 22)
             # count number of non-zero elements in multi-array
-            print('predicted grid', np.count_nonzero(predicted_grid))
+          #  print('predicted grid', np.count_nonzero(predicted_grid))
+          #  print(predicted_grid.sum(axis = 0))
+          #  
+          #  print('initital grid')
+          #  print(observation['grid'].sum(axis = 0))
             # print('predicting grid with active blocks', predicted_grid.sum())
             self.figure.load_figure(predicted_grid)
             self.subtasks = target_to_subtasks(self.figure)
-            self.target_grid, self.termation = self.try_update_task()
+            self.target_grid, termation = self.try_update_task()
             self.start = False
-
-        action_generation, action = self.do_action_from_stack()
+            
+        self.out.write(cv2.resize(observation['pov'][:,:,::-1], (64, 64)))
+        action_generation, action, termation = self.do_action_from_stack()
         if action_generation:
-            self.last_action = self.action
+            
             self.update_obs_stack(observation)
-            self.target_grid, self.termation = self.try_update_task()
-            # print(self.termation)
+            self.target_grid, termation = self.try_update_task()
+            self.last_action = self.action
+            #print(termation)
             observation_for_model = self.obs_for_model(observation)
             action = self.subtask_agent.act([observation_for_model])
+          #  print(action)
             self.action = action[0]
-            if self.action == 17:
+            if self.action >= 17:
                 #  print("Pass action")
                 action = 0
-                self.action = 0
+                #self.action = 0
             if action in self.move_action:
                 #  print(action)
                 action = self.choose_right_color(action)
 
                 jumps = [5 for _ in range(self.jump_count - 1)]
-                self.put([*jumps, action])
+                self.put([action, *jumps])
                 action = 5
-            elif self.termation is not True:
-                self.termation = False
-        if self.termation:
-            self.figure.clear_history()
-
-        return action, self.termation
-
+        
+        if termation:
+         #   print("finish job")
+           # print(observation['grid'].sum(axis = 0))
+            self.clear_variable(observation)
+       # print(action)
+        return action, termation
+    
+    def clear_variable(self, observation):
+        #self.current_dialog = []
+        self.start = True
+        self.subtask_agent.clear_hidden()
+        self.figure.clear_history()
+        self.commands = []
+        self.out.release()
+        self.last_action = None
+        self.action = None
+      #  print("finish job")
+     #   print(observation['grid'].sum(axis = 0))
+        pass 
+    
     def put(self, actions):
         self.action_queue = actions
         return
@@ -134,17 +158,18 @@ class MultitaskHierarchicalAgent:
 
     def try_update_task(self):
         #  print(self.start)
-        if (self.last_action is not None) or self.start:
-            # print("Here")
-            if (self.last_action in self.move_action and self.put_success()) or self.start:
+        if self.start or (self.last_action in self.move_action and self.action==18):
+              #  print("Here")
+#             if (self.last_action in self.move_action and self.put_success()) or self.start:
                 try:
-                    #  print("I am here!")
+                   # print("I am here!")
                     _, target_grid = next(self.subtasks)
                     #  print("Change task!")
                     #  print(target_grid.sum(axis = 0))
                     return target_grid, False
                 except Exception as e:
                     print(e)
+                    print("Finish!")
                     return self.target_grid, True
                     # print("Fail!")
         return self.target_grid, False
@@ -170,9 +195,9 @@ class MultitaskHierarchicalAgent:
     def do_action_from_stack(self):
         try:
             action = self.action_queue.pop()
-            return False, action
+            return False, action, False
         except:
-            return True, None
+            return True, None, False
 
     def choose_right_color(self, action):
 
@@ -185,7 +210,11 @@ class MultitaskHierarchicalAgent:
             'purple': 5,  # purple
             'yellow': 6,  # yellow
         }
-
+        #   print(self.commands[-1])
+#         for key_color in colors_to_hotbar:
+#             if key_color in self.commands[-1]:
+#                 tcolor = colors_to_hotbar[key_color]
+#                 break
         colors = list(colors_to_hotbar.keys())
         idx = list(colors_to_hotbar.values())
         hotbar_to_color = dict(zip(idx, colors))

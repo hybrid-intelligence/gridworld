@@ -25,13 +25,20 @@ from sample_factory.algorithms.utils.arguments import parse_args, load_from_chec
 from models.models import ResnetEncoderWithTarget
 from gridworld.env import GridWorld
 from gridworld.tasks.task import Task
+import gym
 from gym.spaces import Box
 #from wrappers import RandomFigure, TargetGenerator, SubtaskGenerator, VectorObservationWrapper, JumpAfterPlace, FakeObsWrapper
 
-
+            
+class EndActionController(gym.Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.action_space = gym.spaces.Discrete(self.env.action_space.n+1)
+      
 def make_iglu(*args, **kwargs):
     custom_grid = np.ones((9, 11, 11))
     env = GridWorld(render=False, select_and_place=True, discretize=True, max_steps=1000)
+    env = EndActionController(env)
     env.set_task(Task("", custom_grid))
     return env
     
@@ -141,11 +148,11 @@ def make_agent():
    # env = make_iglu()
     cfg = parse_args(argv=['--algo=APPO', '--env=IGLUSilentBuilder-v0', '--experiment=TreeChopBaseline-iglu',
                            '--experiments_root=force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10',
-                           '--train_dir=./agents/mhb_baseline/train_dir/0001'], evaluation=True)
+                           '--train_dir=./agents/mhb_baseline/train_dir/0002'], evaluation=True)
     cfg = load_from_checkpoint(cfg)
 
     cfg.setdefault("path_to_weights",
-                   "./agents/mhb_baseline/train_dir/0001/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/TreeChopBaseline-iglu")
+                   "./agents/mhb_baseline/train_dir/0002/force_envs_single_thread=False;num_envs_per_worker=1;num_workers=10/TreeChopBaseline-iglu")
     return APPOHolder(cfg)
     
 

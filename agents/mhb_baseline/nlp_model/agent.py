@@ -2,9 +2,12 @@ import os
 
 import torch
 import numpy as np
+from pydantic import BaseModel
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-from agents.mhb_baseline.nlp_model.utils import update_state_from_action, logging, parse_logs
+# from utils import parse_logs, update_state_from_action, logging, plot_voxel, compute_metric
+from agents.mhb_baseline.nlp_model.utils import plot_voxel, compute_metric, update_state_from_action, logging, \
+    parse_logs
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -103,20 +106,6 @@ def coord_to_voxel(coordinates):
     return voxel
 
 
-class FakeGridPredictor:
-    def predict_grid(self, dialog, initial_grid=None):
-        result = np.zeros((9, 11, 11))
-        # result[0, 5, 5] = 2
-        # result[1, 5, 5] = 2
-        # result[2, 5, 5] = 2
-        result[0, 5, 5] = 6
-        result[0, 4, 5] = 6
-        result[0, 3, 5] = 6
-        result[0, 2, 5] = 6
-        result[0, 1, 5] = 6
-        return result
-
-
 class GridPredictor:
     def __init__(self):
         self.args = DefArgs()
@@ -161,3 +150,58 @@ class GridPredictor:
                 for k in range(v.shape[2]):
                     if v[i, j, k] in remapping:
                         v[i, j, k] = remapping[v[i, j, k]]
+
+
+def get_dialog(subtask):
+    import gym
+    env = gym.make('IGLUGridworld-v0')
+    env.set_task(subtask)
+    obs = env.reset()
+    return obs['dialog']
+
+
+def main():
+    grid_predictor = None
+
+    os.environ['IGLU_DATA_PATH'] = os.path.join(os.getcwd(),
+                                                'iglu-2022-evaluator-master-private_data-data-iglu/private_data')
+
+    from gridworld.tasks import Task
+
+    from gridworld.data import IGLUDataset
+    dataset = IGLUDataset(task_kwargs=None, force_download=False, )
+
+    total_score = []
+
+    for j, (task_id, session_id, subtask_id, subtask) in enumerate(dataset):
+        str_id = str(task_id) + '-session-' + str(session_id).zfill(3) + '-subtask-' + str(subtask_id).zfill(3)
+        print('Starting task:', str_id)
+        subtask: Task = subtask
+        # if str_id != 'c118-session-001-subtask-001':
+        #     continue
+        # if np.sum(subtask.starting_grid) == 0:
+        #     continue
+
+        if grid_predictor is None:
+            grid_predictor = GridPredictor()
+
+        dialog = get_dialog(subtask)
+        predicted_grid = grid_predictor.predict_grid(dialog)
+
+        if not os.path.exists('plots'):
+            os.makedirs('plots')
+
+        f1_score = round(compute_metric(predicted_grid, subtask.target_grid)['completion_rate_f1'], 3)
+        results = {'F1': f1_score}
+        total_score.append(f1_score)
+        results_str = " ".join([f"{metric}: {value}" for metric, value in results.items()])
+        plot_voxel(predicted_grid, text=str_id + ' ' + f'({results_str})' + "\n" + dialog).savefig(
+            f'./plots/{str_id}-predicted.png')
+        plot_voxel(subtask.target_grid, text=str_id + " (Ground truth)\n" + dialog).savefig(
+            f'./plots/{str_id}-gt.png')
+
+    print('Total F1 score:', np.mean(total_score))
+
+
+if __name__ == '__main__':
+    main()

@@ -90,7 +90,7 @@ def evaluate(LocalEvalConfig):
         observations_agent = obs_res.copy()
         # These keys will not be provided by evaluator
         observations_agent.pop('agentPos', None)
-        observations_agent.pop('grid', None)
+      #  observations_agent.pop('grid', None)
         observations.append(observations_agent)
         envs.append(env)
         current_tasks.append(task)
@@ -139,7 +139,7 @@ def evaluate(LocalEvalConfig):
             observations_agent = obs.copy()
             # These keys will not be provided by the evaluator
             observations_agent.pop('agentPos', None)
-            observations_agent.pop('grid', None)
+          #  observations_agent.pop('grid', None)
             observations.append(observations_agent)
             rewards.append(rew)
             dones.append(done)
@@ -190,9 +190,9 @@ def evaluate(LocalEvalConfig):
 if __name__ == "__main__":
     # change the local config as needed
     class LocalEvalConfig:
-        MAX_EPISODES_PER_TASK = 1
+        MAX_EPISODES_PER_TASK = 2
         REWARDS_FILE = './evaluator/metrics.json'
-        LIMIT_TASKS = 40  # set this to none for all public tasks
+        LIMIT_TASKS = None  # set this to none for all public tasks
 
 
     evaluate(LocalEvalConfig)

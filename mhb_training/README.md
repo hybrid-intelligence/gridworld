@@ -45,24 +45,5 @@ Run ```enjoy.py``` :
 python utils/enjoy.py
 ```
 
-
-## Per-skill aggregation of the baselines performance metrics. 
-Instead of evaluating a metric for each structure in the dataset, we evaluate the agent's skills required to build each structure.
-There are 5 skills in total:
-  * `flat` - flat structure with all blocks on the ground
-  * `flying` - there are blocks that cannot be placed without removing some other blocks (i.e. )
-  * `diagonal` - some blocks are adjacent (in vertical axis) diagonally
-  * `tricky` - some blocks are hidden or there should be a specific order in which they should be placed
-  * `tall` - a structure cannot be built without the agent being high enough (the placement radius is 3 blocks)
-  
-For each task, we calculate F1 score between built and target structures. 
-For each skill, we average the performance on all targets requiring that skill.
-
-| F1 score        | flying |tall |diagonal | flat   | tricky | all  |
-|-----------------| ----- | -----| -------|--------|-------|------|
-| MHB agent (NLP) | 0.292 | 0.322 | 0.242  |  0.334 | 0.295 | 0.313 |
-| MHB agent (full)| 0.233 |0.243  | 0.161  |0.290   |  0.251|  0.258|
-| Random agent (full)| 0.039|0.036  | 0.044  |0.038   |  0.043|  0.039|
-
 ## Results
 ![Baseline job example](https://github.com/ZoyaV/multitask_baseline/raw/master/bexampl.gif)

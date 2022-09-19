@@ -34,7 +34,7 @@ The Multitask Hierarchical Baseline (MHB) agent fully solves the IGLU RL task: i
 
 # Baseline performance
 
-Current baseline was trained in three days (?), the performance metrics are shown below.
+Current baseline was trained in three days, the performance metrics are shown below.
 
 ![](./assets/plots.png)
 
@@ -105,18 +105,18 @@ Alternatively, you can build the docker image to work with. This setup was teste
 ## Training APPO
 Just run ```train.py``` with config_path:
 ```bash
-python main.py --config_path iglu_baseline.yaml
+python mhb_training/main.py --config_path iglu_baseline.yaml
 ```
 ## Enjoy baseline
 Run ```enjoy.py``` :
 ```bash
-python utils/enjoy.py
+python mhb_training/utils/enjoy.py
 ```
 
 # Code structure
 
 The code for NLP model is located at `agents/mhb_baseline/nlp_model`. 
 The heuristic for blocks iteration is located at `wrappers/target_generator.py` (e.g. `target_to_subtasks` function, it implements the main algorithm for splitting the goal into subtasks).
-In  `wrappers/multitask` you can find `TargetGenerator` and `SubtaskGenerator` classes. The first class makes full-figure target using `RandomFigure` generator or `DatasetFigure` generator.
-The second class makes subtasks for environment. The training config for the RL agent is in `iglu_baseline.yaml`. Most of the training code is implemented in the [sample-factory](https://github.com/iglu-contest/sample-factory) package. Most of training curriculum is implemented via wrappers under `wrappers/` directory.
+In  `mhb_training/wrappers/multitask` you can find `TargetGenerator` and `SubtaskGenerator` classes. The first class makes full-figure target using `RandomFigure` generator or `DatasetFigure` generator.
+The second class makes subtasks for environment. The training config for the RL agent is in `iglu_baseline.yaml`. Most of the training code is implemented in the [sample-factory](https://github.com/iglu-contest/sample-factory) package. Most of training curriculum is implemented via wrappers under `mhb_training/wrappers/` directory.
 

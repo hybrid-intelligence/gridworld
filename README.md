@@ -101,7 +101,11 @@ Alternatively, you can build the docker image to work with. This setup was teste
 ```bash
 ./docker/build.sh
 ```
-
+## Training NLP
+Just run ```autoregressive_history.py``` with config_path:
+```bash
+python nlp_training/autoregressive_history.py --config_path iglu_baseline.yaml
+```
 ## Training APPO
 Just run ```train.py``` with config_path:
 ```bash

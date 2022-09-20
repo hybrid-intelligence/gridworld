@@ -136,12 +136,76 @@ class JumpAfterPlace(ActionsWrapper):
 
     def wrap_action(self, action=None):
         if (action > self.act_space[0]) and (action < self.act_space[1]) > 0:
+            yield 5
+            yield 5
             yield action
-            yield 5
-            yield 5
+           
+            
+           # yield 5
         else:
             yield action
-
+            
+class EndActionController(Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.last_true_action = False
+        self.action_space = gym.spaces.Discrete(self.env.action_space.n+1)
+        self.block_moves = [6, 7, 8, 9, 10, 11, 16]
+        #raise Exception(self.block_moves)
+        self.last_observation = np.zeros((9,11,11))
+        self.start = True
+       # super().init(env)
+        
+    def is_block_staged(self, obs):
+        last_obs_binary = np.zeros_like(self.last_observation)
+        last_obs_binary[self.last_observation > 0] = 1       
+        current_obs_binary = np.zeros_like(obs)
+        current_obs_binary[obs > 0] = 1
+        
+        diff = abs(last_obs_binary - current_obs_binary)
+        new_bloks = np.count_nonzero(diff)    
+#         if new_bloks>1: raise Exception(f""" Adds more then one block: 
+#         {last_obs_binary.sum(axis = 0)} \n {current_obs_binary.sum(axis = 0)}""")
+        if new_bloks > 1:
+            return False
+        return new_bloks > 0
+    
+    def reset(self):
+        obs = super().reset()
+        self.last_observation = obs['grid']
+       # raise Exception( self.last_observation.sum(axis = 0))
+        return obs        
+        
+    def step(self, action):    
+        true_action = False
+        
+        # пришло завершение эпизода
+        if action == self.action_space.n - 1:
+            # нуп
+            obs, reward, done, info = super().step(0)
+            # если прошлое действие ставит кубик
+            if self.last_true_action:
+               # print("add reward")
+                reward += 1                
+            # если прошлое действие не ставт кубик
+         #   if not self.last_true_action:
+             #  reward -=0.01
+            self.last_true_action = False  
+        #пришло другое действие
+        else:    
+            obs, reward, done, info = super().step(action)
+            #если было действие и удалось поставить кубик сменяем флаг
+            if action in self.block_moves:            
+                true_action = self.is_block_staged(obs['grid']) 
+            #если прошлое действие было поставить кубик
+            if self.last_true_action:
+            #    print("Action: ", action)
+                reward -= 0.05
+                done = True
+        self.last_true_action = true_action
+        self.last_observation = obs['grid']
+        return obs, reward, done, info
+            
 
 class ColorWrapper(ActionsWrapper):
     def __init__(self, env):
@@ -160,10 +224,10 @@ class ColorWrapper(ActionsWrapper):
         yield action
 
 
-class VisualbservationWrapper(ObsWrapper):
+class VisualObservationWrapper(ObsWrapper):
     def __init__(self, env):
         super().__init__(env)
-
+        self.colums = None
         if 'pov' in self.env.observation_space.keys():
             self.observation_space = gym.spaces.Dict({
                 'compass':  gym.spaces.Box(low=-180, high=180, shape=(1,)),

@@ -36,7 +36,7 @@ The Multitask Hierarchical Baseline (MHB) agent fully solves the IGLU RL task: i
 
 Current baseline was trained in three days, the performance metrics are shown below.
 
-![](./assets/plots.png)
+![](./assets/last_plots.jpg)
 
 Here, the two main metrics are Subtask Success rate and Task Success rate. The first one shows the success probability of one block placement. The second one shows the probability of sucess in building set of blocks in responce to an instruction (i.e. a chain of subtasks).
 

@@ -1,6 +1,11 @@
+import sys
 import numpy as np
-
+sys.path.append("../")
+sys.path.append("./")
 from wrappers.artist import random_relief_map, modify, figure_to_3drelief
+
+
+#from nlp_model.agent import DefArgs, init_models,predict_voxel
 
 
 
@@ -47,6 +52,7 @@ def target_to_subtasks(figure):
                     custom_grid = np.zeros((9, 11, 11))
                     custom_grid[z, x, y] = -1
                     yield (x - 5, z - 1, y - 5, -1), custom_grid
+                    
 
 
 
@@ -68,6 +74,7 @@ class Figure():
         self.hole_indx = None  # all holes indexes
         self.simpl_holes = None  # holes only on the bottom
         self.relief = None  # 2d array of figure
+   
         if figure:
             self.to_multitask_format(figure)
 
@@ -106,14 +113,37 @@ class Figure():
             raise Exception("The figure is not initialized! Use 'make_task' method to do it!")
         return relief, holes, full_figure
 
+class CustomFigure(Figure):
+    row_figure = np.zeros((9,11,11))
+    generator_name = 'custom'
+    def __init__(self, figure = None, name = None):
+        super().__init__()
+        if figure is None:
+            pass
+        else:            
+            self.row_figure = figure
+        if name is None:
+            pass
+        else:
+            self.generator_name = name
+
+    def make_task(self):       
+        self.hole_indx = [[],[],[]]
+        figure = self.to_multitask_format(self.row_figure)        
+        self.simplify()
+        self.figure_parametrs['name'] = self.generator_name
+        self.figure_parametrs['color'] = self.row_figure
+        self.figure_parametrs['relief']= self.relief
+        return figure
 
 class RandomFigure(Figure):
     def __init__(self, cnf=None, color=1):
         super().__init__()
         self.figures_height_range = (3, 8) if cnf is None else cnf['figures_height_range']
-        self.std_range = (95, 160) if cnf is None else cnf['std_range']
+        self.std_range = (95, 110) if cnf is None else cnf['std_range']
         self.figures_count_range = (15, 30) if cnf is None else cnf['figures_count_range']
         self.color = color
+        self.generator_name = 'random'
 
     def make_task(self):
         plane = np.zeros((11, 11))
@@ -121,7 +151,7 @@ class RandomFigure(Figure):
         max_heigt = np.random.choice(choices, p=probs)
         relief = np.random.randint(1, max_heigt,
                                    size=(11, 11))
-        x, y = np.random.randint(0, 11, size=2)
+        x, y = np.random.randint(4, 8, size=2)
         relief_mask = random_relief_map(center=(x, y), std=np.random.randint(*self.std_range) / 100,
                                         count=np.random.randint(*self.figures_count_range))  # from artist
         plane[relief_mask] = 1
@@ -145,6 +175,7 @@ class RandomFigure(Figure):
         self.figure = figure
         self.simplify()
         self.figure_parametrs = {'figure': figure, 'color': figure * self.color, 'relief': self.relief}
+        print(figure.sum(axis = 0))
         return figure
 
 if __name__ == "__main__":

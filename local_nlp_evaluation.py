@@ -23,8 +23,6 @@ def get_dialog(subtask):
 def main():
     grid_predictor = None
 
-    os.environ['IGLU_DATA_PATH'] = 'iglu_data'
-
     from gridworld.tasks import Task
 
     from gridworld.data import IGLUDataset
@@ -43,17 +41,19 @@ def main():
         dialog = get_dialog(subtask)
         predicted_grid = grid_predictor.predict_grid(dialog)
 
-        if not os.path.exists('plots'):
-            os.makedirs('plots')
+        plots_dir = 'nlp-evaluation-plots'
+
+        if not os.path.exists(plots_dir):
+            os.makedirs(plots_dir)
 
         f1_score = round(compute_metric(predicted_grid, subtask)['completion_rate_f1'], 3)
         results = {'F1': f1_score}
         total_score.append(f1_score)
         results_str = " ".join([f"{metric}: {value}" for metric, value in results.items()])
         plot_grid(predicted_grid, text=str_id + ' ' + f'({results_str})' + "\n" + dialog).savefig(
-            f'./plots/{str_id}-predicted.png')
+            f'./{plots_dir}/{str_id}-predicted.png')
         plot_grid(subtask.target_grid, text=str_id + " (Ground truth)\n" + dialog).savefig(
-            f'./plots/{str_id}-gt.png')
+            f'./{plots_dir}/{str_id}-gt.png')
 
     print('Total F1 score:', np.mean(total_score))
 

@@ -1,6 +1,6 @@
 ![IGLU Banner](https://user-images.githubusercontent.com/660004/179000978-29cf4462-4d2b-4623-8418-157449322fda.png)
 
-# **[NeurIPS 2022 - IGLU Challenge](https://www.aicrowd.com/challenges/neurips-2022-iglu-challenge)** - Baseline agent
+# **[NeurIPS 2022 - IGLU Challenge](https://www.aicrowd.com/challenges/neurips-2022-iglu-challenge)** - Multitask Hierarchical Baseline
 
 Quick Links:
 
@@ -10,7 +10,7 @@ Quick Links:
 
 
 # Table of Contents
-- [**NeurIPS 2022 - IGLU Challenge** - Baseline agent](#neurips-2022---iglu-challenge---baseline-agent)
+- [**NeurIPS 2022 - IGLU Challenge** - Multitask Hierarchical Baseline](#neurips-2022---iglu-challenge---baseline-agent)
 - [Table of Contents](#table-of-contents)
 - [Overview](#overview)
 - [Baseline performance](#baseline-performance)
@@ -22,6 +22,7 @@ Quick Links:
 - [Training data and process](#training-data-and-process)
 - [Performance distribution](#performance-distribution)
 - [Installation](#installation)
+  - [Training NLP](#training-nlp) 
   - [Training APPO](#training-appo)
   - [Enjoy baseline](#enjoy-baseline)
 - [Code structure](#code-structure)
@@ -99,21 +100,30 @@ Alternatively, you can build the docker image to work with. This setup was teste
 ```bash
 ./docker/build.sh
 ```
-## Training NLP
-Just run ```autoregressive_history.py``` with config_path:
+## Training NLP T5 Model
+Just run ```autoregressive_history.py``` from ``nlp_training`` directory:
 ```bash
-python nlp_training/autoregressive_history.py --config_path iglu_baseline.yaml
+python nlp_training/autoregressive_history.py
 ```
-## Training APPO
-Just run ```train.py``` with config_path:
+## Training RL APPO Agent
+Just run ```train.py``` from ``rl_training`` directory with config_path:
 ```bash
 python mhb_training/main.py --config_path iglu_baseline.yaml
 ```
-## Enjoy baseline
-Run ```enjoy.py``` :
+
+## Local Evaluation
+
+To evaluate NLP model run (the resulting plots will be saved in ``nlp-evaluation-plots``):
 ```bash
-python mhb_training/utils/enjoy.py
+python local_nlp_evaluation.py
 ```
+
+To evaluate whole pipeline run (the resulting video will be saved in ``videos`` folder):
+```bash
+```bash
+python local_evaluation.py
+```
+
 
 # Code structure
 

@@ -45,7 +45,6 @@ class MultitaskHierarchicalAgent:
         self.commands = None
         #   download_weights()
         self.subtask_agent = make_agent()
-        
 
         self.current_dialog = None
 
@@ -53,52 +52,36 @@ class MultitaskHierarchicalAgent:
         self.actions_space = action_space
 
     def act(self, observation, reward, done, info):
-       # print(observation.keys())
         if done:
-            #print(observation['dialog'])
-            #self.current_dialog = observation['dialog']
             self.clear_variable(observation)
 
             # making empty action to safely go to next episode
             return 0, False
-        
+
         if self.start:
-            episode = np.random.randint(0,100)
+            episode = np.random.randint(0, 100)
             self.out = cv2.VideoWriter(f'video/{episode}.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
                                        20, (64, 64))
             dialog = self.dialogue_to_commands(observation['dialog'])
             self.commands = dialog
-          #  print(len(self.commands ))
             predicted_grid = self.grid_predictor.predict_grid(observation['dialog'])
-          #  print('-----' * 22)
-            # count number of non-zero elements in multi-array
-          #  print('predicted grid', np.count_nonzero(predicted_grid))
-          #  print(predicted_grid.sum(axis = 0))
-          #  
-          #  print('initital grid')
-          #  print(observation['grid'].sum(axis = 0))
-            # print('predicting grid with active blocks', predicted_grid.sum())
             self.figure.load_figure(predicted_grid)
             self.subtasks = target_to_subtasks(self.figure)
             self.target_grid, termation = self.try_update_task()
             self.start = False
-            
-        self.out.write(cv2.resize(observation['pov'][:,:,::-1], (64, 64)))
+
+        self.out.write(cv2.resize(observation['pov'][:, :, ::-1], (64, 64)))
         action_generation, action, termation = self.do_action_from_stack()
         if action_generation:
-            
+
             self.update_obs_stack(observation)
             self.target_grid, termation = self.try_update_task()
             self.last_action = self.action
-            #print(termation)
             observation_for_model = self.obs_for_model(observation)
             action = self.subtask_agent.act([observation_for_model])
-          #  print(action)
             self.action = action[0]
             if self.action >= 17:
-                #  print("Pass action")
                 action = 0
-                #self.action = 0
             if action in self.move_action:
                 #  print(action)
                 action = self.choose_right_color(action)
@@ -106,16 +89,12 @@ class MultitaskHierarchicalAgent:
                 jumps = [5 for _ in range(self.jump_count - 1)]
                 self.put([action, *jumps])
                 action = 5
-        
+
         if termation:
-         #   print("finish job")
-           # print(observation['grid'].sum(axis = 0))
             self.clear_variable(observation)
-       # print(action)
         return action, termation
-    
+
     def clear_variable(self, observation):
-        #self.current_dialog = []
         self.start = True
         self.subtask_agent.clear_hidden()
         self.figure.clear_history()
@@ -123,10 +102,8 @@ class MultitaskHierarchicalAgent:
         self.out.release()
         self.last_action = None
         self.action = None
-      #  print("finish job")
-     #   print(observation['grid'].sum(axis = 0))
-        pass 
-    
+        pass
+
     def put(self, actions):
         self.action_queue = actions
         return
@@ -144,45 +121,29 @@ class MultitaskHierarchicalAgent:
         if np.sum(self.target_grid[0]) == 0 and v > 0.3:
             return True
         if (self.obs_stack[0] is None) or (self.obs_stack[1] is None):
-            print("Not enoth pictures!")
             return False
         diff = abs(self.obs_stack[-1].mean(axis=2) - self.obs_stack[0].mean(axis=2))
         num = np.random.randint(0, 100)
         xc, yc = np.array(diff.shape) // 2
         thresh = 60
         if diff[xc, yc] >= thresh:
-            # plt.imsave("imgs/true_diff%d.png"%num,diff)
             return True
-        #  plt.imsave("imgs/false_diff%d.png"%num,diff)
         return False
 
     def try_update_task(self):
-        #  print(self.start)
-        if self.start or (self.last_action in self.move_action and self.action==18):
-              #  print("Here")
-#             if (self.last_action in self.move_action and self.put_success()) or self.start:
-                try:
-                   # print("I am here!")
-                    _, target_grid = next(self.subtasks)
-                    #  print("Change task!")
-                    #  print(target_grid.sum(axis = 0))
-                    return target_grid, False
-                except Exception as e:
-                    print(e)
-                    print("Finish!")
-                    return self.target_grid, True
-                    # print("Fail!")
+        if self.start or (self.last_action in self.move_action and self.action == 18):
+            try:
+                _, target_grid = next(self.subtasks)
+                return target_grid, False
+            except Exception as e:
+                return self.target_grid, True
         return self.target_grid, False
 
     def dialogue_to_commands(self, full_dialogue):
         commands = re.split("(<Architect>)|(<Builder>)", full_dialogue)
-        # print(commands)
         no_none = [command for command in commands if command is not None]
-        # print(no_none)
         no_zero_len = [command for command in no_none if len(command) > 0]
-        #  print(no_zero_len)
         atchitect = no_zero_len[1::4]
-        # print(atchitect)
         return atchitect
 
     def obs_for_model(self, observation):
@@ -210,13 +171,9 @@ class MultitaskHierarchicalAgent:
             'purple': 5,  # purple
             'yellow': 6,  # yellow
         }
-        #   print(self.commands[-1])
-#         for key_color in colors_to_hotbar:
-#             if key_color in self.commands[-1]:
-#                 tcolor = colors_to_hotbar[key_color]
-#                 break
+
         colors = list(colors_to_hotbar.keys())
         idx = list(colors_to_hotbar.values())
-        hotbar_to_color = dict(zip(idx, colors))
+        # hotbar_to_color = dict(zip(idx, colors))
         action = int(5 + tcolor)
         return action

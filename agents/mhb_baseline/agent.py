@@ -31,7 +31,6 @@ class MultitaskHierarchicalAgent:
         self.figure = DialogueFigure()
         self.subtasks = None
         self.move_action = [6, 7, 8, 9, 10, 11]
-        # self.model, self.tokenizer, self.history, self.stats, self.voxel = init_models(self.args)
         self.jump_flag = 0
         self.action = None
         self.last_action = None
@@ -40,10 +39,9 @@ class MultitaskHierarchicalAgent:
         self.obs_stack = [None, None]
         self.start = True
         self.last_was_action = False
-        self.termation = False
+        self.termination = False
         self.action_queue = []
         self.commands = None
-        #   download_weights()
         self.subtask_agent = make_agent()
 
         self.current_dialog = None
@@ -83,7 +81,6 @@ class MultitaskHierarchicalAgent:
             if self.action >= 17:
                 action = 0
             if action in self.move_action:
-                #  print(action)
                 action = self.choose_right_color(action)
 
                 jumps = [5 for _ in range(self.jump_count - 1)]

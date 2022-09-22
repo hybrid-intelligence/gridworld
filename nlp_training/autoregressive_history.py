@@ -57,8 +57,7 @@ def prepare_data(data_path, history_len=None):
     for key, event in tqdm(data.items()):
         cur_line = ''
         architect_lines, builder_lines = [], []
-
-        for line in event.split('\n'):
+        for line in event[0].split('\n'):
             if line.startswith('<Architect>'):
                 architect_lines.append(line[a:])
                 if cur_line:
@@ -100,7 +99,7 @@ history_len = None
 if len(sys.argv) > 1:
     history_len = int(sys.argv[1])
 
-wandb.init(project='txt2act', entity='antonvoronov', name=f'autoregressive_history_{history_len}')
+wandb.init(project='txt2act', name=f'autoregressive_history_{history_len}')
 
 train_inputs, train_outputs = prepare_data('train_data_augmented_part1.json', history_len=history_len)
 train_dataset = CommandsDataset(train_inputs, train_outputs)

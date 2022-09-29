@@ -10,3 +10,4 @@ sample-factory==1.121.3
 numpy==1.21.5
 pandas
 matplotlib
+git+https://github.com/iglu-contest/gridworld.git@master

@@ -32,13 +32,40 @@ class FakeObsWrapper(gym.ObservationWrapper):
         return observation
 
 
-def make_iglu(*args, **kwargs):
-    from gridworld.env import GridWorld
-    from gridworld.tasks.task import Task
-    custom_grid = np.ones((9, 11, 11))
-    env = GridWorld(render=True, select_and_place=True, discretize=True, max_steps=1000, fake=kwargs.get('fake', False))
-    env.set_task(Task("", custom_grid, invariant=False))
+class InitializationCreator(gym.Wrapper):
+    """This class fixes the GLU context bug during SampleFactory training"""
 
+    def __init__(self, fake_for_first_n_resets=1, select_and_place=True, discretize=True, max_steps=1000):
+        self._number_of_resets = 0
+        self._fake_for_first_n_resets = fake_for_first_n_resets
+        self._select_and_place = select_and_place
+        self._discretize = discretize
+        self._max_steps = max_steps
+
+        self.env = self.create_env()
+        super().__init__(self.env)
+
+    def create_env(self):
+        from gridworld.env import GridWorld
+        from gridworld.tasks.task import Task
+
+        fake = self._number_of_resets <= self._fake_for_first_n_resets
+        env = GridWorld(render=True, select_and_place=self._select_and_place,
+                        discretize=self._discretize,
+                        max_steps=self._max_steps, fake=fake)
+        custom_grid = np.ones((9, 11, 11))
+        env.set_task(Task("", custom_grid, invariant=False))
+        return env
+
+    def reset(self):
+        self.env = self.create_env()
+        self._number_of_resets += 1
+
+        return self.env.reset()
+
+
+def make_iglu():
+    env = InitializationCreator()
     figure_generator = RandomFigure
     env = TargetGenerator(env, fig_generator=figure_generator)
     env = SubtaskGenerator(env)
@@ -48,7 +75,7 @@ def make_iglu(*args, **kwargs):
     env = ColorWrapper(env)
     env = RangetRewardFilledField(env)
     env = Closeness(env)
-    
+
     env = EndActionController(env)
     env = SuccessRateFullFigure(env)
     env = MultiAgentWrapper(env)

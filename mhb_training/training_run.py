@@ -14,9 +14,10 @@ from sample_factory.run_algorithm import run_algorithm
 import sys
 from sample_factory.algorithms.appo.model_utils import register_custom_encoder
 from models.models import ResnetEncoderWithTarget
-from utils.create_env import make_iglu
+from create_env import make_iglu
 from utils.config_validation import Experiment
 from torch.multiprocessing import Pool, Process, set_start_method
+
 
 def iglu_extra_summaries(policy_id, policy_avg_stats, env_steps, summary_writer, cfg):
     for key in policy_avg_stats:
@@ -31,10 +32,7 @@ def iglu_extra_summaries(policy_id, policy_avg_stats, env_steps, summary_writer,
 
 
 def make_env(full_env_name, cfg=None, env_config=None):
-    if env_config is None:
-        env_config = {}
-    return make_iglu(**env_config)
-    # return make_treechop()
+    return make_iglu()
 
 
 def register_custom_components():

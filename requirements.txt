@@ -8,6 +8,7 @@ transformers==4.2.1
 # IGLU packages
 git+https://github.com/iglu-contest/gridworld.git@master
 git+https://github.com/iglu-contest/sample-factory.git@1.121.3.iglu
+gym>=0.21.0,<0.23
 
 # PyTorch
 -f https://download.pytorch.org/whl/torch_stable.html

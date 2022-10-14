@@ -4,6 +4,7 @@ matplotlib
 opencv-python
 sentencepiece
 transformers==4.2.1
+protobuf<=3.20.1
 
 # IGLU packages
 git+https://github.com/iglu-contest/gridworld.git@master

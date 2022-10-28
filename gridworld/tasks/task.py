@@ -95,9 +95,12 @@ class Task:
     ###
 
     def __repr__(self) -> str:
-        instruction = self.last_instruction \
-            if len(self.last_instruction) < 20 \
-            else self.last_instruction[:20] + '...'
+        if self.last_instruction:
+            instruction = self.last_instruction \
+                if len(self.last_instruction) < 20 \
+                else self.last_instruction[:20] + '...'
+        else:
+            instruction = self.chat[:20]
         return f"Task(instruction={instruction})"
 
     def step_intersection(self, grid):

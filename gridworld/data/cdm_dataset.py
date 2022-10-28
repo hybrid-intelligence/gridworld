@@ -1,3 +1,4 @@
+import pdb
 from collections import defaultdict
 import numpy as np
 import pandas as pd
@@ -90,7 +91,8 @@ class CDMDataset:
                 continue
             for _, session in task_sessions.iterrows():
                 task_path = os.path.join(DATA_PREFIX, session.group, 'logs', session.session_id)
-                task = Task(*self._parse_task(task_path, task_id), **self.task_kwargs)
+                chat, target_grid = self._parse_task(task_path, task_id)
+                task = Task(chat, target_grid, **self.task_kwargs)
                 self.tasks[task_id.lower()].append(task)
 
     def reset(self):
@@ -170,7 +172,7 @@ class CDMDataset:
         return chat, target_grid
 
     def __repr__(self):
-        tasks = ", ".join(f'"{t}"' for t in self.task_ids)
+        tasks = ", ".join(f'"{t}"' for t in self.tasks.keys())
         return f'TaskSet({tasks})'
 
     @staticmethod

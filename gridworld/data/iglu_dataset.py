@@ -1,3 +1,4 @@
+import pdb
 from ipaddress import ip_address
 import os
 import json
@@ -335,6 +336,7 @@ class IGLUDataset(Tasks):
 class SingleTurnIGLUDataset(IGLUDataset):
     SINGLE_TURN_INSTRUCTION_FILENAME = 'single_turn_instructions.csv'
     MULTI_TURN_INSTRUCTION_FILENAME = 'multi_turn_dialogs.csv'
+    QUESTION_FILENAME = 'clarifying_questions_train.csv'
     DATASET_URL = {
         "v0.1.0-rc1": 'https://iglumturkstorage.blob.core.windows.net/public-data/single_turn_dataset.zip',
         "v0.1.0-rc2": (
@@ -344,7 +346,8 @@ class SingleTurnIGLUDataset(IGLUDataset):
         "v0.1.0-rc3": (
             'https://iglumturkstorage.blob.core.windows.net/public-data/single_turn_dataset.zip',
             'https://iglumturkstorage.blob.core.windows.net/public-data/parsed_tasks_single_turn_dataset.rc3.tar.bz2'
-        )
+        ),
+        "v0.1.0-rc4": 'https://iglumturkstorage.blob.core.windows.net/public-data/single_turn_dataset.zip'
     }
     BLOCK_MAP = {  
         # voxelworld's colour id : iglu colour id
@@ -380,6 +383,10 @@ class SingleTurnIGLUDataset(IGLUDataset):
     def get_multiturn_dialogs(self, data_path):
         return pd.read_csv(os.path.join(
             data_path, self.MULTI_TURN_INSTRUCTION_FILENAME))
+
+    def get_clarifying_questions(self, data_path):
+        return pd.read_csv(os.path.join(
+            data_path, self.QUESTION_FILENAME))
 
     @classmethod
     def get_data_path(cls):
@@ -530,9 +537,6 @@ class SingleTurnIGLUDataset(IGLUDataset):
         tasks_count = 0
         pbar = tqdm(turns.iterrows(), total=len(turns), desc='parsing dataset')
         for _, row in pbar:
-            pbar.set_postfix_str(f"{tasks_count} tasks") 
-            assert row.InitializedWorldStructureId is not None
-
             # Read initial structure
             initial_world_blocks = _load_structure(row.InitializedWorldPath)
             if initial_world_blocks is None:
@@ -581,7 +585,7 @@ class SingleTurnIGLUDataset(IGLUDataset):
 
             # e.g. initial_world_states\builder-data/8-c92/step-4 -> 8-c92/step-4 
             task_id, step_id = row.InitializedWorldPath.split("/")[-2:]
-            #self.tasks[row.InitializedWorldStructureId].append(task)
+
             self.tasks[f"{task_id}/{step_id}"].append(task)
             tasks_count += 1
 
@@ -592,3 +596,116 @@ class SingleTurnIGLUDataset(IGLUDataset):
 
     def __len__(self):
         return len(sum(self.tasks.values(), []))
+
+
+class QuestionDataset(SingleTurnIGLUDataset):
+    DATASET_URL = {
+        "v0": 'https://www.aicrowd.com/challenges/neurips-2022-iglu-challenge/problems/neurips-2022-iglu-challenge-nlp-task/clarifying_questions_train.csv',
+    }
+
+    def __init__(self, dataset_version='v0', task_kwargs=None,
+            force_download=False, limit=None) -> None:
+        self.limit = limit
+        super().__init__(dataset_version=dataset_version,
+            task_kwargs=task_kwargs, force_download=force_download)
+
+    def parse_tasks(self, dialogs, path):
+        """Fills attribute `self.tasks` with instances of Task.
+
+        A Task contains an initial world state, a target world state and a
+        single instruction.
+
+        Parameters
+        ----------
+        dialogs : pandas.DataFrame
+            Contains information of each session, originally stored
+            in database tables. The information includes:
+                - InitializedWorldStructureId or InitializedWorldGameId:
+                  Original target structure id of the initial world.
+                - InitializedWorldPath: Path to a json file that contains the
+                  initial blocks of the world.
+                - ActionDataPath: Path relative to dataset location with the
+                  target world.
+                - InputInstruction: Session instruction
+                - IsHITQualified: boolean indicating if the step is valid.
+
+        path : _type_
+            Path with the state of the VoxelWorld grid after each session.
+            Each session should have an associated directory named with the
+            session id, with json files that describe the world state after
+            each step.
+
+        """
+        dialogs = dialogs[dialogs.InitializedWorldPath.notna()]
+        dialogs['InitializedWorldPath'] = dialogs['InitializedWorldPath'] \
+            .apply(lambda x: x.replace('\\', os.path.sep))
+        dialogs['InitializedWorldPath'] = dialogs['InitializedWorldPath'] \
+            .apply(lambda x: x.replace('/', os.path.sep))
+
+        # Get the list of games for which the instructions were clear.
+
+        # Util function to read structure from disk.
+        def _load_structure(structure_path):
+            filepath = os.path.join(path, structure_path)
+            if not os.path.exists(filepath):
+                return None
+
+            with open(filepath) as structure_file:
+                structure_data = json.load(structure_file)
+                blocks = structure_data['worldEndingState']['blocks']
+                structure = [self.transform_block(block) for block in blocks]
+
+            return structure
+
+        multiturn_dialogs = self.get_multiturn_dialogs(path)
+        question_data = self.get_clarifying_questions(path)
+
+        tasks_count = 0
+        pbar = tqdm(question_data.iterrows(), total=len(question_data), desc='parsing dataset')
+        for _, row in pbar:
+            # Read initial structure
+            initial_world_blocks = _load_structure(row.InitializedWorldPath)
+            if initial_world_blocks is None:
+                pbar.write(f"Skipping '{row.GameId}'. Can't load starting structure from '{row.InitializedWorldPath}'.")
+                print(row.IsInstructionClear)
+                continue
+
+            found = dialogs[(dialogs['GameId'] == row.GameId) & (row.InputInstruction == dialogs['InputInstruction'])]
+            if len(found) > 0:
+                target_world_blocks = _load_structure(found.iloc[0].TargetWorldPath)
+            else:
+                target_world_blocks = []
+
+
+            last_instruction = '<Architect> ' + self.process(row.InputInstruction)
+            # Read utterances
+            utterances = self.get_previous_dialogs(row, multiturn_dialogs)
+            utterances.append(last_instruction)
+            utterances = '\n'.join(utterances)
+
+            target_label = 1 if row.IsInstructionClear == "Yes" else 0
+            # Construct task
+            task = self.create_task(
+                utterances, initial_world_blocks, target_world_blocks,
+                last_instruction=last_instruction, target_label=target_label)
+
+            # e.g. initial_world_states\builder-data/8-c92/step-4 -> 8-c92/step-4
+            task_id, step_id = row.InitializedWorldPath.split("/")[-2:]
+            # self.tasks[row.InitializedWorldStructureId].append(task)
+            self.tasks[f"{task_id}/{step_id}"].append(task)
+            tasks_count += 1
+
+    def create_task(self, previous_chat, initial_grid, target_grid,
+                        last_instruction, target_label):
+        starting_grid = Tasks.to_sparse(initial_grid)
+        task = Task(
+            chat=previous_chat,
+            target_grid=Tasks.to_dense(target_grid),
+            starting_grid=starting_grid,
+            last_instruction=last_instruction,
+            full_grid=np.full((9,11,11), target_label),
+
+        )
+        # To properly init max_int and prev_grid_size fields
+        task.reset()
+        return task

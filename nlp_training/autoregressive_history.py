@@ -88,6 +88,48 @@ def prepare_data(data_path, history_len=None):
 
     return input_seqs, output_seqs
 
+def prepare_new_data(data_path, history_len=None):
+    a = len('<Architect> ')
+    b = len('<Builder> ')
+    data = json.load(open(data_path))
+
+    input_seqs, output_seqs = [], []
+    for key, event in tqdm(data.items()):
+        cur_line = ''
+        architect_lines, builder_lines = [], []
+        for line in event[0].split('\n'):
+            if line.startswith('<Architect>'):
+                architect_lines.append(line[a:])
+                if cur_line:
+                    builder_lines.append(cur_line[:-1])
+                    cur_line = ''
+            else:
+                #line = line.replace('cube', 'block')
+                cur_line += line[b:] + '. '
+
+        if len(architect_lines) != len(builder_lines):
+            architect_lines = architect_lines[:-1]
+
+        for i in range(len(architect_lines)):
+            context = ''
+            if history_len:
+                range_start = max(i - history_len, 0)
+                range_end = min(range_start + history_len, i)
+            else:
+                range_start, range_end = 0, i
+
+            for j in range(range_start, range_end):
+                if j < len(builder_lines):
+                    context += '<Architect> ' + architect_lines[j] + ' <Builder> ' + builder_lines[j] + ' <sep1> '
+                else:
+                    context += '<Architect> ' + architect_lines[j] + ' <sep1> '
+
+            input_seqs.append(context + '<Architect> ' + architect_lines[i])
+            if i < len(builder_lines):
+                output_seqs.append(builder_lines[i])
+
+    return input_seqs, output_seqs
+
 tokenizer = T5Tokenizer.from_pretrained("t5-large")
 max_source_length = 512
 max_target_length = 128
@@ -101,7 +143,7 @@ if len(sys.argv) > 1:
 
 wandb.init(project='txt2act', name=f'autoregressive_history_{history_len}')
 
-train_inputs, train_outputs = prepare_data('train_data_augmented_part1.json', history_len=history_len)
+train_inputs, train_outputs = prepare_new_data('new_data.json')
 train_dataset = CommandsDataset(train_inputs, train_outputs)
 train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, drop_last=True, 
                           collate_fn=lambda x : prepare_inputs(x, tokenizer))
